@@ -1,0 +1,3092 @@
+#using <System.dll>
+#using <System.Drawing.dll>
+#using <System.Windows.Forms.dll>
+using namespace System;
+using namespace System::IO;
+using namespace System::Drawing;
+using namespace System::Drawing::Text;
+using namespace System::Drawing::Drawing2D;
+using namespace System::Windows::Forms;
+using namespace System::Globalization;
+
+namespace RecreoHub3D
+{
+    public ref class MovieItem
+    {
+    public:
+        String^ Name;
+        String^ Duration;
+        int Year;
+        String^ Genre;
+
+        MovieItem(String^ n, String^ d, int y, String^ g)
+        {
+            Name = n;
+            Duration = d;
+            Year = y; Genre = g;
+        }
+        virtual String^ ToString() override
+        {
+            return String::Format("{0}  |  {1}  |  {2}", Name, Duration, Year);
+        }
+    };
+
+    public ref class ProductItem
+    {
+    public:
+        String^ Name;
+        int Price;
+        String^ Category;
+
+        ProductItem(String^ n, int p, String^ c)
+        {
+            Name = n;
+            Price = p;
+            Category = c;
+        }
+
+        virtual String^ ToString() override
+        {
+            return String::Format("{0}  -  Rs {1}", Name, Price);
+        }
+    };
+
+    public ref class SmoothPanel : public Panel
+    {
+    public:
+        SmoothPanel()
+        {
+            this->DoubleBuffered = true;
+            this->SetStyle(ControlStyles::AllPaintingInWmPaint | ControlStyles::OptimizedDoubleBuffer | ControlStyles::UserPaint | ControlStyles::ResizeRedraw, true);
+            this->BackColor = Color::Transparent;
+            this->UpdateStyles();
+        }
+
+    protected:
+        virtual void OnPaintBackground(PaintEventArgs^ e) override
+        {
+
+        }
+    };
+
+    public ref class LuxCard : public Panel
+    {
+    public:
+        Color CardAccent;
+        bool Hovering;
+
+        LuxCard()
+        {
+            CardAccent = Color::FromArgb(240, 165, 0);
+            Hovering = false;
+
+            this->DoubleBuffered = true;
+            this->BackColor = Color::Transparent;
+
+            this->SetStyle
+            (
+                ControlStyles::AllPaintingInWmPaint |
+                ControlStyles::OptimizedDoubleBuffer |
+                ControlStyles::UserPaint |
+                ControlStyles::ResizeRedraw |
+                ControlStyles::SupportsTransparentBackColor,
+                true
+            );
+
+            this->UpdateStyles();
+
+            this->MouseEnter += gcnew EventHandler(this, &LuxCard::OnIn);
+            this->MouseLeave += gcnew EventHandler(this, &LuxCard::OnOut);
+        }
+
+    private:
+        void OnIn(Object^, EventArgs^)
+        {
+            Hovering = true;
+            this->Invalidate();
+        }
+
+        void OnOut(Object^, EventArgs^)
+        {
+            Hovering = false;
+            this->Invalidate();
+        }
+
+        GraphicsPath^ RR(RectangleF r, float rad)
+        {
+            GraphicsPath^ p = gcnew GraphicsPath();
+            float d = rad * 2.0f;
+
+            p->AddArc(r.X, r.Y, d, d, 180.0f, 90.0f);
+            p->AddArc(r.Right - d, r.Y, d, d, 270.0f, 90.0f);
+            p->AddArc(r.Right - d, r.Bottom - d, d, d, 0.0f, 90.0f);
+            p->AddArc(r.X, r.Bottom - d, d, d, 90.0f, 90.0f);
+
+            p->CloseFigure();
+            return p;
+        }
+
+        void PaintCardBase(Graphics^ g)
+        {
+            g->SmoothingMode = SmoothingMode::AntiAlias;
+
+            RectangleF cr = RectangleF
+            (
+                0.5f,
+                0.5f,
+                (float)this->Width - 1.5f,
+                (float)this->Height - 1.5f
+            );
+
+            GraphicsPath^ cp = RR(cr, 16.0f);
+
+            LinearGradientBrush^ fb = gcnew LinearGradientBrush
+            (
+                cr,
+                Color::FromArgb(252, 22, 26, 52),
+                Color::FromArgb(252, 12, 15, 34),
+                130.0f
+            );
+
+            g->FillPath(fb, cp);
+
+            delete fb;
+            delete cp;
+        }
+
+    protected:
+        virtual void OnResize(EventArgs^ e) override
+        {
+            Panel::OnResize(e);
+
+            if (this->Width > 0 && this->Height > 0)
+            {
+                RectangleF regionRect = RectangleF
+                (
+                    0.0f,
+                    0.0f,
+                    (float)this->Width,
+                    (float)this->Height
+                );
+
+                GraphicsPath^ regionPath = RR(regionRect, 16.0f);
+
+                this->Region = gcnew System::Drawing::Region(regionPath);
+
+                delete regionPath;
+            }
+        }
+
+        virtual void OnPaintBackground(PaintEventArgs^ e) override
+        {
+
+            PaintCardBase(e->Graphics);
+        }
+
+        virtual void OnPaint(PaintEventArgs^ e) override
+        {
+            Graphics^ g = e->Graphics;
+            g->SmoothingMode = SmoothingMode::AntiAlias;
+
+            PaintCardBase(g);
+
+            RectangleF cr = RectangleF
+            (
+                0.5f,
+                0.5f,
+                (float)this->Width - 1.5f,
+                (float)this->Height - 1.5f
+            );
+
+            GraphicsPath^ cp = RR(cr, 16.0f);
+
+            Pen^ borderPen = gcnew Pen
+            (
+                Hovering ? CardAccent : Color::FromArgb(90, CardAccent),
+                Hovering ? 1.8f : 1.0f
+            );
+
+            g->DrawPath(borderPen, cp);
+            delete borderPen;
+
+            SolidBrush^ accentBrush = gcnew SolidBrush(CardAccent);
+
+            g->FillRectangle
+            (
+                accentBrush,
+                cr.X,
+                cr.Y + 18.0f,
+                4.0f,
+                cr.Height - 36.0f
+            );
+
+            delete accentBrush;
+
+            RectangleF shine = RectangleF
+            (
+                cr.X + 10.0f,
+                cr.Y + 8.0f,
+                cr.Width - 20.0f,
+                32.0f
+            );
+
+            GraphicsPath^ shinePath = RR(shine, 12.0f);
+
+            LinearGradientBrush^ shineBrush = gcnew LinearGradientBrush
+            (
+                shine,
+                Color::FromArgb(24, 255, 255, 255),
+                Color::FromArgb(0, 255, 255, 255),
+                90.0f
+            );
+
+            g->FillPath(shineBrush, shinePath);
+
+            delete shineBrush;
+            delete shinePath;
+
+            if (Hovering)
+            {
+                RectangleF hoverGlow = RectangleF
+                (
+                    cr.X + 12.0f,
+                    cr.Y + 2.0f,
+                    cr.Width - 24.0f,
+                    18.0f
+                );
+
+                GraphicsPath^ hoverPath = RR(hoverGlow, 8.0f);
+
+                SolidBrush^ hoverBrush = gcnew SolidBrush(Color::FromArgb(35, CardAccent));
+                g->FillPath(hoverBrush, hoverPath);
+
+                delete hoverBrush;
+                delete hoverPath;
+            }
+
+            delete cp;
+        }
+    };
+
+    public ref class GlowButton : public Button
+    {
+    public:
+        Color ColorA, ColorB;
+        bool Hovering;
+        bool Ghost;
+
+        GlowButton()
+        {
+            ColorA = Color::FromArgb(240, 165, 0);
+            ColorB = Color::FromArgb(255, 200, 80);
+            Hovering = false;
+            Ghost = false;
+
+            this->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+            this->FlatAppearance->BorderSize = 0;
+
+            this->FlatAppearance->MouseOverBackColor = Color::Transparent;
+            this->FlatAppearance->MouseDownBackColor = Color::Transparent;
+            this->FlatAppearance->CheckedBackColor = Color::Transparent;
+
+            this->ForeColor = Color::White;
+            this->Font = gcnew Drawing::Font("Segoe UI", 10.5f, FontStyle::Bold);
+            this->Cursor = Cursors::Hand;
+            this->UseMnemonic = false;
+            this->BackColor = Color::Transparent;
+
+            this->SetStyle
+            (
+                ControlStyles::AllPaintingInWmPaint |
+                ControlStyles::OptimizedDoubleBuffer |
+                ControlStyles::UserPaint |
+                ControlStyles::ResizeRedraw |
+                ControlStyles::SupportsTransparentBackColor,
+                true
+            );
+
+            this->MouseEnter += gcnew EventHandler(this, &GlowButton::OnIn);
+            this->MouseLeave += gcnew EventHandler(this, &GlowButton::OnOut);
+        }
+
+    private:
+        void OnIn(Object^, EventArgs^)
+        {
+            Hovering = true;
+            this->Invalidate();
+        }
+
+        void OnOut(Object^, EventArgs^)
+        {
+            Hovering = false;
+            this->Invalidate();
+        }
+
+        GraphicsPath^ RR(RectangleF r, float rad)
+        {
+            GraphicsPath^ p = gcnew GraphicsPath();
+            float d = rad * 2.0f;
+
+            p->AddArc(r.X, r.Y, d, d, 180.0f, 90.0f);
+            p->AddArc(r.Right - d, r.Y, d, d, 270.0f, 90.0f);
+            p->AddArc(r.Right - d, r.Bottom - d, d, d, 0.0f, 90.0f);
+            p->AddArc(r.X, r.Bottom - d, d, d, 90.0f, 90.0f);
+
+            p->CloseFigure();
+            return p;
+        }
+
+    protected:
+        virtual void OnResize(EventArgs^ e) override
+        {
+            Button::OnResize(e);
+
+            if (this->Width > 0 && this->Height > 0)
+            {
+                RectangleF r = RectangleF
+                (
+                    0.0f,
+                    0.0f,
+                    (float)this->Width,
+                    (float)this->Height
+                );
+
+                GraphicsPath^ regionPath = RR(r, 10.0f);
+                this->Region = gcnew System::Drawing::Region(regionPath);
+                delete regionPath;
+            }
+        }
+
+        virtual void OnPaintBackground(PaintEventArgs^ e) override
+        {
+
+        }
+
+        virtual void OnPaint(PaintEventArgs^ e) override
+        {
+            Graphics^ g = e->Graphics;
+            g->SmoothingMode = SmoothingMode::AntiAlias;
+
+            RectangleF r = RectangleF
+            (
+                0.0f,
+                0.0f,
+                (float)this->Width - 1.0f,
+                (float)this->Height - 1.0f
+            );
+
+            GraphicsPath^ path = RR(r, 10.0f);
+
+            if (Ghost)
+            {
+                g->FillPath
+                (
+                    gcnew SolidBrush(Hovering ? Color::FromArgb(30, ColorA) : Color::Transparent),
+                    path
+                );
+
+                g->DrawPath(gcnew Pen(ColorA, 1.5f), path);
+
+                TextRenderer::DrawText
+                (
+                    g,
+                    this->Text,
+                    this->Font,
+                    Rectangle(0, 0, this->Width, this->Height),
+                    ColorA,
+                    TextFormatFlags::HorizontalCenter |
+                    TextFormatFlags::VerticalCenter |
+                    TextFormatFlags::WordBreak |
+                    TextFormatFlags::NoPrefix
+                );
+            }
+            else
+            {
+                Color a = Hovering ? ControlPaint::Light(ColorA, 0.12f) : ColorA;
+                Color b = Hovering ? ControlPaint::Light(ColorB, 0.12f) : ColorB;
+
+                LinearGradientBrush^ br = gcnew LinearGradientBrush
+                (
+                    r,
+                    a,
+                    b,
+                    90.0f
+                );
+
+                g->FillPath(br, path);
+                delete br;
+
+                GraphicsState^ oldState = g->Save();
+                g->SetClip(path);
+
+                RectangleF shine = RectangleF
+                (
+                    4.0f,
+                    3.0f,
+                    (float)this->Width - 8.0f,
+                    (float)this->Height / 2.5f
+                );
+
+                GraphicsPath^ shinePath = RR(shine, 8.0f);
+
+                LinearGradientBrush^ shineBrush = gcnew LinearGradientBrush
+                (
+                    shine,
+                    Color::FromArgb(55, 255, 255, 255),
+                    Color::FromArgb(0, 255, 255, 255),
+                    90.0f
+                );
+
+                g->FillPath(shineBrush, shinePath);
+
+                delete shineBrush;
+                delete shinePath;
+
+                g->Restore(oldState);
+
+                g->DrawPath(gcnew Pen(Color::FromArgb(65, 255, 255, 255), 1.0f), path);
+
+                TextRenderer::DrawText
+                (
+                    g,
+                    this->Text,
+                    this->Font,
+                    Rectangle(0, 0, this->Width, this->Height),
+                    this->ForeColor,
+                    TextFormatFlags::HorizontalCenter |
+                    TextFormatFlags::VerticalCenter |
+                    TextFormatFlags::WordBreak |
+                    TextFormatFlags::NoPrefix
+                );
+            }
+
+            delete path;
+        }
+    };
+
+    public ref class GlassBox : public Panel
+    {
+    public:
+        Color Accent;
+
+        GlassBox()
+        {
+            Accent = Color::FromArgb(120, 240, 165, 0);
+
+            this->DoubleBuffered = true;
+            this->BackColor = Color::Transparent;
+
+            this->SetStyle
+            (
+                ControlStyles::AllPaintingInWmPaint |
+                ControlStyles::OptimizedDoubleBuffer |
+                ControlStyles::UserPaint |
+                ControlStyles::ResizeRedraw |
+                ControlStyles::SupportsTransparentBackColor,
+                true
+            );
+
+            this->UpdateStyles();
+        }
+
+    private:
+        GraphicsPath^ RR(RectangleF r, float rad)
+        {
+            GraphicsPath^ p = gcnew GraphicsPath();
+            float d = rad * 2.0f;
+
+            p->AddArc(r.X, r.Y, d, d, 180.0f, 90.0f);
+            p->AddArc(r.Right - d, r.Y, d, d, 270.0f, 90.0f);
+            p->AddArc(r.Right - d, r.Bottom - d, d, d, 0.0f, 90.0f);
+            p->AddArc(r.X, r.Bottom - d, d, d, 90.0f, 90.0f);
+
+            p->CloseFigure();
+            return p;
+        }
+
+        void PaintCardBase(Graphics^ g)
+        {
+            g->SmoothingMode = SmoothingMode::AntiAlias;
+
+            RectangleF cardRect = RectangleF
+            (
+                0.5f,
+                0.5f,
+                (float)this->Width - 1.0f,
+                (float)this->Height - 1.0f
+            );
+
+            GraphicsPath^ cardPath = RR(cardRect, 22.0f);
+
+            LinearGradientBrush^ fillBrush = gcnew LinearGradientBrush
+            (
+                cardRect,
+                Color::FromArgb(252, 30, 32, 38),
+                Color::FromArgb(252, 12, 14, 24),
+                135.0f
+            );
+
+            g->FillPath(fillBrush, cardPath);
+
+            delete fillBrush;
+            delete cardPath;
+        }
+
+    protected:
+        virtual void OnResize(EventArgs^ e) override
+        {
+            Panel::OnResize(e);
+
+            if (this->Width > 0 && this->Height > 0)
+            {
+                GraphicsPath^ regionPath = RR
+                (
+                    RectangleF(0.0f, 0.0f, (float)this->Width, (float)this->Height),
+                    22.0f
+                );
+
+                this->Region = gcnew System::Drawing::Region(regionPath);
+
+                delete regionPath;
+            }
+        }
+
+        virtual void OnPaintBackground(PaintEventArgs^ e) override
+        {
+
+            PaintCardBase(e->Graphics);
+        }
+
+        virtual void OnPaint(PaintEventArgs^ e) override
+        {
+            Graphics^ g = e->Graphics;
+            g->SmoothingMode = SmoothingMode::AntiAlias;
+
+            PaintCardBase(g);
+
+            RectangleF cardRect = RectangleF
+            (
+                0.5f,
+                0.5f,
+                (float)this->Width - 1.0f,
+                (float)this->Height - 1.0f
+            );
+
+            GraphicsPath^ cardPath = RR(cardRect, 22.0f);
+
+            RectangleF shineRect = RectangleF
+            (
+                16.0f,
+                12.0f,
+                (float)this->Width - 32.0f,
+                56.0f
+            );
+
+            GraphicsPath^ shinePath = RR(shineRect, 16.0f);
+
+            LinearGradientBrush^ shineBrush = gcnew LinearGradientBrush
+            (
+                shineRect,
+                Color::FromArgb(42, 255, 255, 255),
+                Color::FromArgb(0, 255, 255, 255),
+                90.0f
+            );
+
+            g->FillPath(shineBrush, shinePath);
+
+            delete shineBrush;
+            delete shinePath;
+
+            Pen^ accentPen = gcnew Pen(Color::FromArgb(150, Accent), 1.6f);
+            g->DrawPath(accentPen, cardPath);
+            delete accentPen;
+
+            Pen^ softPen = gcnew Pen(Color::FromArgb(40, 255, 255, 255), 1.0f);
+            g->DrawPath(softPen, cardPath);
+            delete softPen;
+
+            SolidBrush^ accentBrush = gcnew SolidBrush(Color::FromArgb(190, Accent));
+
+            g->FillRectangle
+            (
+                accentBrush,
+                18.0f,
+                22.0f,
+                4.0f,
+                36.0f
+            );
+
+            delete accentBrush;
+
+            Pen^ dividerPen = gcnew Pen(Color::FromArgb(35, 255, 255, 255), 1.0f);
+
+            g->DrawLine
+            (
+                dividerPen,
+                26.0f,
+                70.0f,
+                (float)this->Width - 28.0f,
+                70.0f
+            );
+
+            delete dividerPen;
+            delete cardPath;
+        }
+    };
+
+    ref class Particle
+    {
+    public:
+        float x, y, speed, size;
+        Color col;
+        float phase;
+
+        Particle(float px, float py, float sp, float sz, Color c, float ph)
+        {
+            x = px;
+            y = py;
+            speed = sp;
+            size = sz;
+            col = c;
+            phase = ph;
+        }
+    };
+
+    public ref class RecreoHubForm : public Form
+    {
+    private:
+        SmoothPanel^ welcomePage, ^ dashboardPage, ^ explorePage, ^ cinemaPage, ^ coffeePage, ^ indoorPage, ^ arcadePage, ^ purchasesPage;
+        Timer^ sceneTimer;
+        Random^ rnd;
+        float scene;
+        Image^ heroLogo;
+        array<Particle^>^ particles;
+
+        array<MovieItem^>^ movies;
+        array<ProductItem^>^ products;
+
+        ComboBox^ genreBox, ^ movieBox, ^ coffeeCategoryBox;
+        NumericUpDown^ ticketCount;
+        FlowLayoutPanel^ seatGrid, ^ productGrid;
+        TextBox^ cinemaReceipt, ^ coffeeReceipt, ^ indoorOutput, ^ earningsBox;
+        array<bool>^ seatBooked, ^ seatSelected;
+        array<GlowButton^>^ seatButtons;
+        ListBox^ orderList;
+        CheckBox^ blendBox, ^ shotBox, ^ sauceBox, ^ cheeseBox;
+        Label^ coffeeBillLabel;
+        int                coffeeBill;
+        TextBox^ memberUserBox, ^ memberPassBox;
+        GlassBox^ indoorLoginBox, ^ indoorGameBox;
+        String^ hangWord;
+        array<bool>^ hangGuessed;
+        int                hangAttempts;
+        Label^ hangDisplay, ^ hangStatus;
+        TextBox^ hangInput;
+        int                numberTarget, numberAttempts;
+        TextBox^ numberInput;
+        Label^ numberStatus;
+        array<GlowButton^>^ tttButtons;
+        array<Char>^ tttBoard;
+        Char               currentPlayer;
+        Label^ tttStatus;
+        TextBox^ adminUserBox, ^ adminPassBox;
+
+        Color GOLD, GOLD_LT, IVORY, MUTED, C_CIN, C_COF, C_IND, C_ARC, C_ERN, TT_BLUE, TT_BLUE_LT, BG_DARK;
+
+    public:
+        RecreoHubForm()
+        {
+            scene = 0.0f;
+            coffeeBill = 0;
+            GOLD = Color::FromArgb(240, 165, 0);
+            GOLD_LT = Color::FromArgb(255, 209, 80);
+            IVORY = Color::FromArgb(245, 240, 232);
+            MUTED = Color::FromArgb(136, 150, 170);
+            C_CIN = Color::FromArgb(232, 69, 90);
+            C_COF = Color::FromArgb(255, 140, 66);
+            C_IND = Color::FromArgb(62, 207, 178);
+            C_ARC = Color::FromArgb(168, 85, 247);
+            C_ERN = Color::FromArgb(59, 130, 246);
+            TT_BLUE = Color::FromArgb(30, 64, 175);
+            TT_BLUE_LT = Color::FromArgb(59, 130, 246);
+            BG_DARK = Color::FromArgb(7, 7, 21);
+            InitData();
+            InitUI();
+            sceneTimer->Start();
+        }
+
+    private:
+        void InitData()
+        {
+            rnd = gcnew Random();
+            seatBooked = gcnew array<bool>(30);
+            seatSelected = gcnew array<bool>(30);
+
+            particles = gcnew array<Particle^>(50);
+            array<Color>^ pc = gcnew array<Color>{ C_CIN, C_COF, C_IND, C_ARC, GOLD_LT,
+                Color::FromArgb(200, 180, 255), Color::FromArgb(255, 255, 200) };
+
+            for (int i = 0; i < 50; i++)
+            {
+                particles[i] = gcnew Particle(
+                    (float)(rnd->Next(500, 1220)),
+                    (float)(rnd->Next(100, 700)),
+                    (float)(rnd->NextDouble() * 0.6 + 0.2),
+                    (float)(rnd->NextDouble() * 3 + 1),
+                    pc[rnd->Next(pc->Length)],
+                    (float)(rnd->NextDouble() * 6.28));
+            }
+
+            movies = gcnew array<MovieItem^>
+            {
+                gcnew MovieItem("Carry-On", "1 hour 59 minutes", 2024, "Action"),
+                    gcnew MovieItem("Red One", "2 hours 3 minutes", 2024, "Action"),
+                    gcnew MovieItem("Twisters", "2 hours 2 minutes", 2024, "Action"),
+                    gcnew MovieItem("Homestead", "1 hour 52 minutes", 2024, "Action"),
+                    gcnew MovieItem("Abigail", "1 hour 49 minutes", 2024, "Horror"),
+                    gcnew MovieItem("Cuckoo", "1 hour 42 minutes", 2024, "Horror"),
+                    gcnew MovieItem("Trap", "1 hour 45 minutes", 2024, "Horror"),
+                    gcnew MovieItem("Knock at the Cabin", "1 hour 40 minutes", 2023, "Horror"),
+                    gcnew MovieItem("The Substance", "2 hours 21 minutes", 2024, "Drama"),
+                    gcnew MovieItem("Oppenheimer", "3 hours", 2023, "Drama"),
+                    gcnew MovieItem("The 4 Corners", "1 hour 16 minutes", 2022, "Drama"),
+                    gcnew MovieItem("Saltburn", "2 hours 11 minutes", 2023, "Drama")
+            };
+            products = gcnew array<ProductItem^>
+            {
+                gcnew ProductItem("Frozen Cappuccino", 825, "Iced Coffees"),
+                    gcnew ProductItem("Iced Spanish Latte", 645, "Iced Coffees"),
+                    gcnew ProductItem("Iced Americano", 495, "Iced Coffees"),
+                    gcnew ProductItem("Coffee Crunch Frappe", 695, "Iced Coffees"),
+                    gcnew ProductItem("Mozzarella Sticks", 995, "Starters"),
+                    gcnew ProductItem("Mexican Fries", 1195, "Starters"),
+                    gcnew ProductItem("Potato Skins", 895, "Starters"),
+                    gcnew ProductItem("Loaded Nachos", 2095, "Starters"),
+                    gcnew ProductItem("Chocolate Chip Cookie", 245, "Desserts"),
+                    gcnew ProductItem("Waffle with Ice Cream", 895, "Desserts"),
+                    gcnew ProductItem("Chocolate Heaven Cake", 695, "Desserts"),
+                    gcnew ProductItem("Swiss Chocolate Brownie", 795, "Desserts")
+            };
+        }
+
+        void InitUI()
+        {
+            this->Text = "RecreoHub - Recreation Center";
+            this->ClientSize = Drawing::Size(1320, 680);
+            this->StartPosition = FormStartPosition::CenterScreen;
+            this->FormBorderStyle = System::Windows::Forms::FormBorderStyle::FixedSingle;
+            this->MaximizeBox = false;
+            this->DoubleBuffered = true;
+            this->BackColor = BG_DARK;
+
+            sceneTimer = gcnew Timer();
+            sceneTimer->Interval = 45;
+            sceneTimer->Tick += gcnew EventHandler(this, &RecreoHubForm::OnTick);
+
+            welcomePage = MakePage(true);
+            dashboardPage = MakePage(false);
+            explorePage = MakePage(false);
+            cinemaPage = MakePage(false);
+            coffeePage = MakePage(false);
+            indoorPage = MakePage(false);
+            arcadePage = MakePage(false);
+            purchasesPage = MakePage(false);
+
+            LoadHeroLogo();
+
+            BuildWelcome();
+            BuildDashboard();
+            BuildExplore();
+            BuildCinema();
+            BuildCoffee();
+            BuildIndoor();
+            BuildArcade();
+            BuildPurchases();
+
+            this->Controls->Add(purchasesPage);
+            this->Controls->Add(arcadePage);
+            this->Controls->Add(indoorPage);
+            this->Controls->Add(coffeePage);
+            this->Controls->Add(cinemaPage);
+            this->Controls->Add(dashboardPage);
+            this->Controls->Add(explorePage);
+            this->Controls->Add(welcomePage);
+        }
+
+        SmoothPanel^ MakePage(bool vis)
+        {
+            SmoothPanel^ p = gcnew SmoothPanel();
+            p->Dock = DockStyle::Fill;
+            p->Visible = vis;
+            p->Paint += gcnew PaintEventHandler(this, &RecreoHubForm::PaintPage);
+            return p;
+        }
+
+        void BuildWelcome()
+        {
+            GlowButton^ cta = Btn("Explore Center >>", 48, 288, 210, 52, GOLD, Color::FromArgb(20, 20, 40));
+
+            cta->Ghost = false;
+            cta->ColorA = Color::FromArgb(245, 165, 0);
+            cta->ColorB = Color::FromArgb(255, 215, 85);
+            cta->Click += gcnew EventHandler(this, &RecreoHubForm::ShowExplore);
+
+            GlowButton^ ghost = Btn("All Modules >>", 274, 288, 210, 52, GOLD, Color::FromArgb(20, 20, 40));
+
+            ghost->Ghost = false;
+            ghost->ColorA = Color::FromArgb(245, 165, 0);
+            ghost->ColorB = Color::FromArgb(255, 215, 85);
+            ghost->Click += gcnew EventHandler(this, &RecreoHubForm::ShowDashboard);
+
+            array<String^>^ pn = gcnew array<String^>
+            {
+                "Cinema", "Indoor", "Cafe", "Arcade"
+            };
+
+            array<Color>^ pcA = gcnew array<Color>
+            {
+                Color::FromArgb(245, 65, 88),
+                Color::FromArgb(45, 200, 180),
+                Color::FromArgb(255, 128, 45),
+                Color::FromArgb(155, 75, 245)
+            };
+
+            array<Color>^ pcB = gcnew array<Color>
+            {
+                Color::FromArgb(255, 105, 125),
+                Color::FromArgb(90, 235, 210),
+                Color::FromArgb(255, 175, 70),
+                Color::FromArgb(195, 105, 255)
+            };
+
+            array<EventHandler^>^ actions = gcnew array<EventHandler^>
+            {
+                gcnew EventHandler(this, &RecreoHubForm::ShowCinema),
+                gcnew EventHandler(this, &RecreoHubForm::ShowIndoor),
+                gcnew EventHandler(this, &RecreoHubForm::ShowCoffee),
+                gcnew EventHandler(this, &RecreoHubForm::ShowArcade)
+            };
+
+            for (int i = 0; i < 4; i++)
+            {
+                GlowButton^ pill = Btn(pn[i], 48 + i * 112, 382, 104, 40, pcA[i], Color::White);
+
+                pill->ColorB = pcB[i];
+                pill->Click += actions[i];
+
+                welcomePage->Controls->Add(pill);
+            }
+
+            welcomePage->Controls->Add(cta);
+            welcomePage->Controls->Add(ghost);
+        }
+
+        void BuildDashboard()
+        {
+            AddHdr(dashboardPage, "RecreoHub Control Center", "Choose a module below to manage bookings, orders, games, and purchases.");
+            AddStat(dashboardPage, "Cinema Bookings", "128", "+12%", 65, 108, C_CIN);
+            AddStat(dashboardPage, "Cafe Orders", "342", "+8%", 320, 108, C_COF);
+            AddStat(dashboardPage, "Active Members", "256", "+5%", 575, 108, C_IND);
+            AddStat(dashboardPage, "Total Earnings", "Rs 24.5k", "+18%", 830, 108, GOLD);
+
+            Label^ sl = L("Modules", 65, 240, 200, 30, 16, FontStyle::Bold, IVORY);
+
+            dashboardPage->Controls->Add(sl);
+
+            AddMod("Cinema House", "Movies, Seats, Receipts", "CH", C_CIN, 65, 285, gcnew EventHandler(this, &RecreoHubForm::ShowCinema));
+            AddMod("Coffee Shop", "Menu, Extras, Orders", "CS", C_COF, 475, 285, gcnew EventHandler(this, &RecreoHubForm::ShowCoffee));
+            AddMod("Indoor Games", "Snooker, Tennis, Squash", "IG", C_IND, 885, 285, gcnew EventHandler(this, &RecreoHubForm::ShowIndoor));
+            AddMod("Arcade Games", "Hangman, Guess, Tic Tac Toe", "AG", C_ARC, 273, 470, gcnew EventHandler(this, &RecreoHubForm::ShowArcade));
+            AddMod("Earnings", "Admin Earnings Report", "ER", C_ERN, 683, 470, gcnew EventHandler(this, &RecreoHubForm::ShowPurchases));
+
+            GlowButton^ hb = Btn
+            (
+                "Home",
+                1100,
+                490,
+                145,
+                44,
+                Color::FromArgb(232, 205, 145),
+                Color::FromArgb(112, 116, 128)
+            );
+
+            hb->ColorA = Color::FromArgb(232, 205, 145);
+            hb->ColorB = Color::FromArgb(112, 116, 128);
+            hb->ForeColor = Color::FromArgb(15, 18, 28);
+
+            hb->Click += gcnew EventHandler(this, &RecreoHubForm::ShowWelcome);
+            dashboardPage->Controls->Add(hb);
+
+            GlowButton^ eb = Btn
+            (
+                "Exit",
+                1100,
+                548,
+                145,
+                44,
+                Color::FromArgb(210, 176, 130),
+                Color::FromArgb(120, 82, 55)
+            );
+
+            eb->ColorA = Color::FromArgb(210, 176, 130);
+            eb->ColorB = Color::FromArgb(120, 82, 55);
+            eb->ForeColor = Color::FromArgb(18, 15, 12);
+
+            eb->Click += gcnew EventHandler(this, &RecreoHubForm::ExitApp);
+            dashboardPage->Controls->Add(eb);
+        }
+
+        void BuildExplore()
+        {
+            AddHdr
+            (
+                explorePage,
+                "Explore Center",
+                "Preview the recreation center areas before opening the full management dashboard."
+            );
+
+            GlowButton^ homeBtn = Btn
+            (
+                "Home",
+                1036,
+                36,
+                105,
+                34,
+                Color::FromArgb(232, 205, 145),
+                Color::FromArgb(15, 18, 28)
+            );
+
+            homeBtn->ColorA = Color::FromArgb(232, 205, 145);
+            homeBtn->ColorB = Color::FromArgb(112, 116, 128);
+            homeBtn->ForeColor = Color::FromArgb(15, 18, 28);
+            homeBtn->Font = gcnew Drawing::Font("Segoe UI", 9.2f, FontStyle::Bold);
+            homeBtn->Click += gcnew EventHandler(this, &RecreoHubForm::ShowWelcome);
+
+            explorePage->Controls->Add(homeBtn);
+            homeBtn->BringToFront();
+
+            GlowButton^ modulesBtn = Btn
+            (
+                "Modules",
+                1158,
+                36,
+                126,
+                34,
+                Color::FromArgb(210, 176, 130),
+                Color::FromArgb(18, 15, 12)
+            );
+
+            modulesBtn->ColorA = Color::FromArgb(210, 176, 130);
+            modulesBtn->ColorB = Color::FromArgb(120, 82, 55);
+            modulesBtn->ForeColor = Color::FromArgb(18, 15, 12);
+            modulesBtn->Font = gcnew Drawing::Font("Segoe UI", 9.2f, FontStyle::Bold);
+            modulesBtn->Click += gcnew EventHandler(this, &RecreoHubForm::ShowDashboard);
+
+            explorePage->Controls->Add(modulesBtn);
+            modulesBtn->BringToFront();
+
+            explorePage->Controls->Add
+            (
+                L
+                (
+                    "Center Overview",
+                    65,
+                    104,
+                    360,
+                    34,
+                    17,
+                    FontStyle::Bold,
+                    IVORY
+                )
+            );
+
+            explorePage->Controls->Add
+            (
+                L
+                (
+                    "A quick look at what visitors can access inside RecreoHub.",
+                    67,
+                    137,
+                    580,
+                    24,
+                    10,
+                    FontStyle::Regular,
+                    MUTED
+                )
+            );
+
+            AddExploreTile
+            (
+                "Cinema House",
+                "Cinema House",
+                "Movies, Seats, Receipts",
+                "CH",
+                C_CIN,
+                65,
+                178,
+                250,
+                gcnew EventHandler(this, &RecreoHubForm::ShowCinema)
+            );
+
+            AddExploreTile
+            (
+                "Indoor Games",
+                "Indoor Games",
+                "Snooker, Tennis, Squash",
+                "IG",
+                C_IND,
+                367,
+                178,
+                250,
+                gcnew EventHandler(this, &RecreoHubForm::ShowIndoor)
+            );
+
+            AddExploreTile
+            (
+                "Coffee Shop",
+                "Coffee Shop",
+                "Menu, Extras, Orders",
+                "CS",
+                C_COF,
+                669,
+                178,
+                250,
+                gcnew EventHandler(this, &RecreoHubForm::ShowCoffee)
+            );
+
+            AddExploreTile
+            (
+                "Arcade Games",
+                "Arcade Games",
+                "Hangman, Guess, Tic Tac Toe",
+                "AG",
+                C_ARC,
+                971,
+                178,
+                285,
+                gcnew EventHandler(this, &RecreoHubForm::ShowArcade)
+            );
+
+            GlassBox^ introBox = Glass(65, 338, 520, 245, GOLD);
+
+            introBox->Controls->Add
+            (
+                L
+                (
+                    "What is RecreoHub?",
+                    26,
+                    22,
+                    360,
+                    32,
+                    17,
+                    FontStyle::Bold,
+                    IVORY
+                )
+            );
+
+            introBox->Controls->Add
+            (
+                L
+                (
+                    "RecreoHub brings the main recreation center areas into one system. Visitors can explore the center, while staff can manage bookings, games, orders, and reports from the Control Center.",
+                    28,
+                    88,
+                    455,
+                    72,
+                    10,
+                    FontStyle::Regular,
+                    Color::FromArgb(215, 215, 225)
+                )
+            );
+
+            GlowButton^ openAllBtn = Btn
+            (
+                "Open All Modules >>",
+                28,
+                176,
+                205,
+                44,
+                Color::FromArgb(210, 176, 130),
+                Color::FromArgb(18, 15, 12)
+            );
+
+            openAllBtn->ColorA = Color::FromArgb(210, 176, 130);
+            openAllBtn->ColorB = Color::FromArgb(120, 82, 55);
+            openAllBtn->ForeColor = Color::FromArgb(18, 15, 12);
+            openAllBtn->Click += gcnew EventHandler(this, &RecreoHubForm::ShowDashboard);
+            introBox->Controls->Add(openAllBtn);
+
+            GlowButton^ backHomeBtn = Btn
+            (
+                "<< Back Home",
+                252,
+                176,
+                170,
+                44,
+                Color::FromArgb(232, 205, 145),
+                Color::FromArgb(15, 18, 28)
+            );
+
+            backHomeBtn->ColorA = Color::FromArgb(232, 205, 145);
+            backHomeBtn->ColorB = Color::FromArgb(112, 116, 128);
+            backHomeBtn->ForeColor = Color::FromArgb(15, 18, 28);
+            backHomeBtn->Click += gcnew EventHandler(this, &RecreoHubForm::ShowWelcome);
+            introBox->Controls->Add(backHomeBtn);
+
+            explorePage->Controls->Add(introBox);
+
+            GlassBox^ flowBox = Glass(625, 338, 630, 245, C_IND);
+
+            flowBox->Controls->Add
+            (
+                L
+                (
+                    "How the system is arranged",
+                    26,
+                    22,
+                    420,
+                    32,
+                    17,
+                    FontStyle::Bold,
+                    IVORY
+                )
+            );
+
+            flowBox->Controls->Add
+            (
+                L
+                (
+                    "1. Start from the homepage and explore the center areas.",
+                    34,
+                    90,
+                    540,
+                    24,
+                    10,
+                    FontStyle::Regular,
+                    Color::FromArgb(215, 215, 225)
+                )
+            );
+
+            flowBox->Controls->Add
+            (
+                L
+                (
+                    "2. Use each area card to directly open Cinema, Indoor, Cafe, or Arcade.",
+                    34,
+                    124,
+                    560,
+                    24,
+                    10,
+                    FontStyle::Regular,
+                    Color::FromArgb(215, 215, 225)
+                )
+            );
+
+            flowBox->Controls->Add
+            (
+                L
+                (
+                    "3. Open All Modules when you want the full admin control dashboard.",
+                    34,
+                    158,
+                    560,
+                    24,
+                    10,
+                    FontStyle::Regular,
+                    Color::FromArgb(215, 215, 225)
+                )
+            );
+
+            flowBox->Controls->Add
+            (
+                L
+                (
+                    "This keeps the visitor side and management side separate, so both homepage buttons now have a clear purpose.",
+                    34,
+                    194,
+                    560,
+                    28,
+                    9.5f,
+                    FontStyle::Bold,
+                    GOLD_LT
+                )
+            );
+
+            explorePage->Controls->Add(flowBox);
+        }
+
+        void AddExploreTile
+        (
+            String^ title,
+            String^ mainText,
+            String^ subText,
+            String^ code,
+            Color acc,
+            int x,
+            int y,
+            int w,
+            EventHandler^ click
+        )
+        {
+            LuxCard^ c = gcnew LuxCard();
+
+            c->Location = Point(x, y);
+            c->Size = Drawing::Size(w, 118);
+            c->CardAccent = acc;
+            c->Cursor = Cursors::Hand;
+            c->Click += click;
+
+            explorePage->Controls->Add(c);
+
+            Label^ titleLabel = L
+            (
+                title,
+                18,
+                14,
+                w - 36,
+                18,
+                8.6f,
+                FontStyle::Regular,
+                MUTED
+            );
+
+            titleLabel->Click += click;
+            c->Controls->Add(titleLabel);
+
+            Label^ codeLabel = L
+            (
+                code,
+                18,
+                34,
+                58,
+                40,
+                21,
+                FontStyle::Bold,
+                IVORY
+            );
+
+            codeLabel->TextAlign = ContentAlignment::MiddleLeft;
+            codeLabel->Click += click;
+            c->Controls->Add(codeLabel);
+
+            Label^ mainLabel = L
+            (
+                mainText,
+                88,
+                34,
+                w - 102,
+                24,
+                10.2f,
+                FontStyle::Bold,
+                IVORY
+            );
+
+            mainLabel->Click += click;
+            c->Controls->Add(mainLabel);
+
+            Label^ subLabel = L
+            (
+                subText,
+                88,
+                62,
+                w - 102,
+                20,
+                8.2f,
+                FontStyle::Regular,
+                MUTED
+            );
+
+            subLabel->Click += click;
+            c->Controls->Add(subLabel);
+
+            Label^ openLabel = L
+            (
+                "Open >>",
+                18,
+                88,
+                100,
+                20,
+                8.8f,
+                FontStyle::Bold,
+                acc
+            );
+
+            openLabel->Click += click;
+            c->Controls->Add(openLabel);
+        }
+
+        void BuildCinema()
+        {
+            AddHdr(cinemaPage, "Cinema House", "Select genre, choose a movie, book seats, and generate your receipt.");
+            AddBack(cinemaPage);
+
+            GlassBox^ left = Glass(56, 145, 440, 475, C_CIN);
+            GlassBox^ right = Glass(552, 145, 712, 475, GOLD);
+
+            left->Controls->Add(L("Movie Booking", 24, 22, 360, 32, 18, FontStyle::Bold, IVORY));
+            left->Controls->Add(SL("Genre", 24, 65));
+
+            genreBox = Combo(24, 88, 370);
+            genreBox->Items->AddRange(gcnew array<Object^>
+            {
+                "Action", "Horror", "Drama"
+            });
+            genreBox->SelectedIndexChanged += gcnew EventHandler(this, &RecreoHubForm::GenreChanged);
+
+            left->Controls->Add(genreBox);
+            left->Controls->Add(SL("Movie", 24, 132)); movieBox = Combo(24, 155, 370);
+            left->Controls->Add(movieBox);
+            left->Controls->Add(SL("Tickets", 24, 200));
+
+            ticketCount = gcnew NumericUpDown();
+            ticketCount->Location = Point(24, 222);
+            ticketCount->Size = Drawing::Size(110, 36);
+            ticketCount->Minimum = 1;
+            ticketCount->Maximum = 30;
+            ticketCount->Value = 1;
+            ticketCount->Font = gcnew Drawing::Font("Segoe UI", 11, FontStyle::Regular);
+            ticketCount->BackColor = Color::FromArgb(20, 22, 48);
+            ticketCount->ForeColor = IVORY;
+
+            left->Controls->Add(ticketCount);
+
+            GlowButton^ bk = Btn("Confirm Booking", 24, 278, 205, 46, C_CIN, Color::White);
+            bk->Click += gcnew EventHandler(this, &RecreoHubForm::BookCinemaSeats);
+            left->Controls->Add(bk);
+
+            GlowButton^ cl = Btn("Clear", 240, 278, 105, 46, GOLD, Color::FromArgb(15, 15, 30));
+            cl->Click += gcnew EventHandler(this, &RecreoHubForm::ClearSeatSelection);
+            left->Controls->Add(cl);
+            left->Controls->Add(SL("Receipt", 24, 340));
+
+            cinemaReceipt = TA(24, 362, 374, 88);
+            left->Controls->Add(cinemaReceipt);
+            right->Controls->Add(L("Seat Map", 24, 22, 360, 32, 18, FontStyle::Bold, IVORY));
+            right->Controls->Add(L("Teal=free  Gold=selected  Red=booked", 24, 58, 590, 20, 9, FontStyle::Regular, MUTED));
+
+            seatGrid = gcnew FlowLayoutPanel();
+            seatGrid->Location = Point(69, 88);
+            seatGrid->Size = Drawing::Size(590, 350);
+            seatGrid->BackColor = Color::Transparent;
+            seatGrid->WrapContents = true;
+            seatGrid->FlowDirection = FlowDirection::LeftToRight;
+
+            right->Controls->Add(seatGrid);
+            BuildSeats();
+            cinemaPage->Controls->Add(left);
+            cinemaPage->Controls->Add(right);
+            genreBox->SelectedIndex = 0;
+        }
+
+        void BuildCoffee()
+        {
+            AddHdr(coffeePage, "Coffee Shop", "Browse the menu, add extras, and checkout your order.");
+            AddBack(coffeePage);
+
+            GlassBox^ menu = Glass(56, 145, 530, 475, C_COF);
+            GlassBox^ cart = Glass(642, 145, 622, 475, GOLD);
+
+            menu->Controls->Add(L("Menu", 24, 22, 300, 32, 18, FontStyle::Bold, IVORY));
+
+            coffeeCategoryBox = Combo(24, 64, 450);
+            coffeeCategoryBox->DropDownHeight = 92;
+            coffeeCategoryBox->Items->AddRange(gcnew array<Object^>
+            {
+                "Iced Coffees", "Starters", "Desserts"
+            });
+            coffeeCategoryBox->SelectedIndexChanged += gcnew EventHandler(this, &RecreoHubForm::CoffeeCategoryChanged);
+            menu->Controls->Add(coffeeCategoryBox);
+
+            productGrid = gcnew FlowLayoutPanel();
+            productGrid->Location = Point(48, 165);
+            productGrid->Size = Drawing::Size(434, 270);
+            productGrid->BackColor = Color::Transparent;
+            productGrid->AutoScroll = true;
+            menu->Controls->Add(productGrid);
+
+            cart->Controls->Add(L("Your Order", 24, 22, 300, 32, 18, FontStyle::Bold, IVORY));
+            orderList = gcnew ListBox();
+            orderList->Location = Point(24, 62);
+            orderList->Size = Drawing::Size(574, 112);
+            orderList->Font = gcnew Drawing::Font("Segoe UI", 10, FontStyle::Regular);
+            orderList->BackColor = Color::FromArgb(14, 16, 36);
+            orderList->ForeColor = IVORY;
+            orderList->BorderStyle = BorderStyle::None;
+
+            cart->Controls->Add(orderList);
+            cart->Controls->Add(L("Extras", 24, 188, 100, 22, 11, FontStyle::Bold, IVORY));
+
+            blendBox = Chk("Signature / Italian Blend  +Rs 100", 24, 214);
+            shotBox = Chk("Extra Shot  +Rs 175", 24, 240);
+            sauceBox = Chk("Extra Sauce  +Rs 175", 24, 266);
+            cheeseBox = Chk("Extra Cheese  +Rs 225", 24, 292);
+
+            cart->Controls->Add(blendBox);
+            cart->Controls->Add(shotBox);
+            cart->Controls->Add(sauceBox);
+            cart->Controls->Add(cheeseBox);
+
+            GlowButton^ ae = Btn("Add Extras", 100, 326, 155, 44, C_COF, Color::White);
+            ae->Click += gcnew EventHandler(this, &RecreoHubForm::AddCoffeeExtras);
+            cart->Controls->Add(ae);
+
+            GlowButton^ co = Btn("Checkout", 271, 326, 138, 44, C_IND, Color::White);
+            co->Click += gcnew EventHandler(this, &RecreoHubForm::CheckoutCoffee);
+            cart->Controls->Add(co);
+
+            GlowButton^ cc = Btn("Clear", 425, 326, 98, 44, C_CIN, Color::White);
+            cc->Click += gcnew EventHandler(this, &RecreoHubForm::ClearCoffeeOrder);
+            cart->Controls->Add(cc);
+
+            coffeeBillLabel = L("Bill: Rs 0", 24, 384, 220, 30, 14, FontStyle::Bold, GOLD_LT);
+
+            cart->Controls->Add(coffeeBillLabel);
+            coffeeReceipt = TA(24, 418, 574, 34);
+            cart->Controls->Add(coffeeReceipt);
+            coffeePage->Controls->Add(menu);
+            coffeePage->Controls->Add(cart);
+            coffeeCategoryBox->SelectedIndex = 0;
+        }
+
+        void BuildIndoor()
+        {
+            AddHdr(indoorPage, "Indoor Games", "Members can access snooker, table tennis, and squash simulations.");
+            AddBack(indoorPage);
+
+            indoorLoginBox = Glass(56, 145, 395, 435, GOLD);
+            indoorGameBox = Glass(507, 145, 757, 435, C_IND);
+            indoorLoginBox->Controls->Add(L("Member Login", 24, 22, 300, 32, 18, FontStyle::Bold, IVORY));
+            indoorLoginBox->Controls->Add(SL("Username", 38, 68));
+
+            memberUserBox = Inp(38, 90, 320);
+            memberUserBox->Text = "member";
+
+            indoorLoginBox->Controls->Add(memberUserBox);
+            indoorLoginBox->Controls->Add(SL("Password", 38, 138));
+            memberPassBox = Inp(38, 160, 320);
+            memberPassBox->UseSystemPasswordChar = true;
+            memberPassBox->Text = "password123";
+            indoorLoginBox->Controls->Add(memberPassBox);
+
+            GlowButton^ lb = Btn("Unlock Games", 108, 220, 178, 46, GOLD, Color::FromArgb(15, 15, 30));
+            lb->Click += gcnew EventHandler(this, &RecreoHubForm::ValidateMemberGUI);
+
+            indoorLoginBox->Controls->Add(lb);
+            indoorGameBox->Controls->Add(L("Game Arena", 24, 22, 300, 32, 18, FontStyle::Bold, IVORY));
+
+            GlowButton^ sn = Btn("Snooker", 123, 70, 155, 46, C_COF, Color::White);
+            sn->ColorA = C_COF;
+            sn->ColorB = ControlPaint::Light(C_COF, 0.20f);
+
+            GlowButton^ tt = Btn("Table Tennis", 301, 70, 155, 46, C_ARC, Color::White);
+            GlowButton^ sq = Btn("Squash", 479, 70, 155, 46, C_ERN, Color::White);
+
+            sn->Click += gcnew EventHandler(this, &RecreoHubForm::PlaySnookerGUI);
+            tt->Click += gcnew EventHandler(this, &RecreoHubForm::PlayTableTennisGUI);
+            sq->Click += gcnew EventHandler(this, &RecreoHubForm::PlaySquashGUI);
+
+            indoorGameBox->Controls->Add(sn);
+            indoorGameBox->Controls->Add(tt);
+            indoorGameBox->Controls->Add(sq);
+            indoorOutput = TA(44, 140, 669, 245);
+            indoorOutput->Text = "Login first to access indoor games.";
+            indoorGameBox->Controls->Add(indoorOutput);
+
+            SetGameBtns(false);
+            indoorPage->Controls->Add(indoorLoginBox);
+            indoorPage->Controls->Add(indoorGameBox);
+        }
+
+        void BuildArcade()
+        {
+            AddHdr(arcadePage, "Arcade Games", "Play Hangman, Guess the Number, and Tic Tac Toe.");
+            AddBack(arcadePage);
+
+            GlassBox^ hg = Glass(64, 145, 355, 455, C_ARC);
+            GlassBox^ nm = Glass(483, 145, 355, 455, C_COF);
+            GlassBox^ tc = Glass(902, 145, 355, 455, C_IND);
+
+            BuildHangmanBox(hg);
+            BuildNumberBox(nm);
+            BuildTicTacToeBox(tc);
+
+            arcadePage->Controls->Add(hg);
+            arcadePage->Controls->Add(nm);
+            arcadePage->Controls->Add(tc);
+        }
+
+        void BuildPurchases()
+        {
+            AddHdr(purchasesPage, "Earnings Report", "Admin login to view cinema, coffee, and total earnings.");
+            AddBack(purchasesPage);
+
+            GlassBox^ lc = Glass(56, 145, 395, 435, GOLD);
+            GlassBox^ rc = Glass(507, 145, 757, 435, C_ERN);
+
+            lc->Controls->Add(L("Operator Login", 24, 22, 300, 32, 18, FontStyle::Bold, IVORY));
+            lc->Controls->Add(SL("Username", 38, 68));
+
+            adminUserBox = Inp(38, 90, 320);
+            adminUserBox->Text = "admin";
+
+            lc->Controls->Add(adminUserBox);
+            lc->Controls->Add(SL("Password", 38, 138));
+
+            adminPassBox = Inp(38, 160, 320);
+            adminPassBox->UseSystemPasswordChar = true;
+            adminPassBox->Text = "1234";
+
+            lc->Controls->Add(adminPassBox);
+            GlowButton^ vb = Btn("View Earnings", 108, 220, 178, 46, GOLD, Color::FromArgb(15, 15, 30));
+
+            vb->Click += gcnew EventHandler(this, &RecreoHubForm::ViewEarningsGUI);
+            lc->Controls->Add(vb);
+            rc->Controls->Add(L("Earnings Summary", 24, 22, 300, 32, 18, FontStyle::Bold, IVORY));
+
+            earningsBox = ReportBox(24, 75, 709, 285);
+            earningsBox->Text = "Enter admin credentials and click View Earnings.";
+
+            rc->Controls->Add(earningsBox);
+
+            purchasesPage->Controls->Add(lc);
+            purchasesPage->Controls->Add(rc);
+        }
+
+        void AddHdr(SmoothPanel^ p, String^ t, String^ s)
+        {
+            Panel^ bar = gcnew Panel();
+            bar->Location = Point(0, 0);
+            bar->Size = Drawing::Size(1320, 4);
+            bar->BackColor = GOLD;
+
+            p->Controls->Add(bar);
+            p->Controls->Add(L(t, 48, 10, 780, 40, 24, FontStyle::Bold, IVORY));
+            p->Controls->Add(L(s, 52, 55, 820, 24, 10, FontStyle::Regular, MUTED));
+        }
+
+        void AddBack(SmoothPanel^ p)
+        {
+            GlowButton^ b = Btn
+            (
+                "Back",
+                1172,
+                36,
+                112,
+                34,
+                Color::FromArgb(230, 170, 45),
+                Color::FromArgb(15, 15, 30)
+            );
+
+            b->Ghost = false;
+
+            b->ColorA = Color::FromArgb(245, 180, 45);
+            b->ColorB = Color::FromArgb(255, 215, 95);
+
+            b->ForeColor = Color::FromArgb(15, 15, 25);
+            b->Font = gcnew Drawing::Font("Segoe UI", 9.5f, FontStyle::Bold);
+
+            b->Click += gcnew EventHandler(this, &RecreoHubForm::ShowDashboard);
+
+            p->Controls->Add(b);
+            b->BringToFront();
+        }
+
+        void AddStat(SmoothPanel^ p, String^ lbl, String^ val, String^ chg, int x, int y, Color acc)
+        {
+            LuxCard^ c = gcnew LuxCard();
+            c->Location = Point(x, y);
+            c->Size = Drawing::Size(228, 118);
+            c->CardAccent = acc;
+
+            p->Controls->Add(c);
+
+            c->Controls->Add(L(lbl, 18, 14, 180, 18, 9, FontStyle::Regular, MUTED));
+            c->Controls->Add(L(val, 18, 34, 180, 40, 22, FontStyle::Bold, IVORY));
+            c->Controls->Add(L(chg, 18, 82, 80, 20, 9, FontStyle::Bold, acc));
+        }
+
+        void AddMod(String^ t, String^ d, String^ code, Color acc, int x, int y, EventHandler^ click)
+        {
+            LuxCard^ c = gcnew LuxCard();
+            c->Location = Point(x, y);
+            c->Size = Drawing::Size(365, 162);
+            c->CardAccent = acc;
+            c->Cursor = Cursors::Hand;
+            c->Click += click;
+            dashboardPage->Controls->Add(c);
+
+            Panel^ badge = gcnew Panel();
+            badge->Location = Point(18, 22);
+            badge->Size = Drawing::Size(52, 52);
+            badge->BackColor = Color::FromArgb(40, acc);
+            badge->Click += click;
+            c->Controls->Add(badge);
+
+            Label^ cl = L(code, 0, 0, 52, 52, 14, FontStyle::Bold, acc);
+            cl->TextAlign = ContentAlignment::MiddleCenter; cl->Click += click;
+            badge->Controls->Add(cl);
+
+            Label^ tl = L(t, 80, 22, 252, 28, 13, FontStyle::Bold, IVORY);
+            tl->Click += click;
+            c->Controls->Add(tl);
+
+            Label^ dl = L(d, 80, 52, 252, 36, 9.5f, FontStyle::Regular, MUTED);
+            dl->Click += click;
+            c->Controls->Add(dl);
+
+            Label^ ol = L("Open >>", 80, 108, 200, 22, 9.5f, FontStyle::Bold, acc);
+            ol->Click += click;
+            c->Controls->Add(ol);
+        }
+
+        GlassBox^ Glass(int x, int y, int w, int h, Color acc)
+        {
+            GlassBox^ g = gcnew GlassBox();
+            g->Location = Point(x, y);
+            g->Size = Drawing::Size(w, h);
+            g->Accent = acc; return g;
+        }
+
+        Label^ L(String^ t, int x, int y, int w, int h, float sz, FontStyle fs, Color fc)
+        {
+            Label^ l = gcnew Label();
+            l->Text = t;
+            l->Location = Point(x, y);
+            l->Size = Drawing::Size(w, h);
+            l->Font = gcnew Drawing::Font("Segoe UI", sz, fs);
+            l->ForeColor = fc;
+            l->BackColor = Color::Transparent;
+            l->TextAlign = ContentAlignment::MiddleLeft;
+            l->UseMnemonic = false;
+            return l;
+        }
+
+        Label^ SL(String^ t, int x, int y)
+        {
+            return L(t, x, y, 260, 18, 9.5f, FontStyle::Bold, MUTED);
+        }
+
+        GlowButton^ Btn(String^ t, int x, int y, int w, int h, Color a, Color tc)
+        {
+            GlowButton^ b = gcnew GlowButton();
+
+            b->Text = t;
+            b->Location = Point(x, y);
+            b->Size = Drawing::Size(w, h);
+            b->ColorA = a;
+            b->ColorB = ControlPaint::Light(a, 0.20f);
+            b->ForeColor = tc;
+            b->BackColor = Color::Transparent;
+            return b;
+        }
+
+        TextBox^ Inp(int x, int y, int w)
+        {
+            TextBox^ t = gcnew TextBox();
+            t->Location = Point(x, y);
+            t->Size = Drawing::Size(w, 36);
+            t->Font = gcnew Drawing::Font("Segoe UI", 11, FontStyle::Regular);
+            t->BackColor = Color::FromArgb(18, 20, 44);
+            t->ForeColor = IVORY;
+            t->BorderStyle = BorderStyle::FixedSingle;
+            return t;
+        }
+
+        ComboBox^ Combo(int x, int y, int w)
+        {
+            ComboBox^ c = gcnew ComboBox();
+            c->Location = Point(x, y);
+            c->Size = Drawing::Size(w, 36);
+            c->DropDownStyle = ComboBoxStyle::DropDownList;
+            c->Font = gcnew Drawing::Font("Segoe UI", 10.5f, FontStyle::Regular);
+            c->BackColor = Color::FromArgb(18, 20, 44);
+            c->ForeColor = IVORY;
+            c->IntegralHeight = false;
+            c->DropDownHeight = 96;
+            c->FlatStyle = FlatStyle::Flat;
+            return c;
+        }
+
+        CheckBox^ Chk(String^ t, int x, int y)
+        {
+            CheckBox^ cb = gcnew CheckBox();
+            cb->Text = t;
+            cb->Location = Point(x, y);
+            cb->Size = Drawing::Size(400, 24);
+            cb->Font = gcnew Drawing::Font("Segoe UI", 10, FontStyle::Regular);
+            cb->ForeColor = MUTED;
+            cb->BackColor = Color::Transparent;
+            return cb;
+        }
+
+        TextBox^ TA(int x, int y, int w, int h)
+        {
+            TextBox^ t = gcnew TextBox();
+            t->Location = Point(x, y);
+            t->Size = Drawing::Size(w, h);
+            t->Multiline = true;
+            t->ReadOnly = true;
+            t->ScrollBars = ScrollBars::Vertical;
+            t->Font = gcnew Drawing::Font("Consolas", 10, FontStyle::Regular);
+            t->BackColor = Color::FromArgb(7, 7, 21);
+            t->ForeColor = GOLD_LT;
+            t->BorderStyle = BorderStyle::None;
+            return t;
+        }
+
+        TextBox^ ReportBox(int x, int y, int w, int h)
+        {
+            TextBox^ t = gcnew TextBox();
+
+            t->Location = Point(x, y);
+            t->Size = Drawing::Size(w, h);
+
+            t->Multiline = true;
+            t->ReadOnly = true;
+
+            t->ScrollBars = ScrollBars::None;
+
+            t->Font = gcnew Drawing::Font("Consolas", 10.5f, FontStyle::Regular);
+
+            t->BackColor = Color::FromArgb(8, 10, 24);
+            t->ForeColor = GOLD_LT;
+
+            t->BorderStyle = BorderStyle::FixedSingle;
+
+            return t;
+        }
+
+        void ShowOnly(SmoothPanel^ page)
+        {
+            array<SmoothPanel^>^ all = gcnew array<SmoothPanel^>
+            {
+                welcomePage,
+                dashboardPage,
+                explorePage,
+                cinemaPage,
+                coffeePage,
+                indoorPage,
+                arcadePage,
+                purchasesPage
+            };
+
+            for each(SmoothPanel ^ p in all)
+            {
+                p->Visible = false;
+            }
+
+            page->Visible = true;
+            page->BringToFront();
+
+            page->Invalidate();
+
+            for each(Control ^ c in page->Controls)
+            {
+                c->Invalidate();
+            }
+        }
+
+        void ShowWelcome(Object^, EventArgs^)
+        {
+            ShowOnly(welcomePage);
+        }
+
+        void ShowDashboard(Object^, EventArgs^)
+        {
+            ShowOnly(dashboardPage);
+        }
+
+        void ShowExplore(Object^, EventArgs^)
+        {
+            ShowOnly(explorePage);
+        }
+
+        void ShowCinema(Object^, EventArgs^)
+        {
+            ShowOnly(cinemaPage);
+        }
+
+        void ShowCoffee(Object^, EventArgs^)
+        {
+            ShowOnly(coffeePage);
+        }
+
+        void ShowIndoor(Object^, EventArgs^)
+        {
+            ShowOnly(indoorPage);
+        }
+
+        void ShowArcade(Object^, EventArgs^)
+        {
+            ShowOnly(arcadePage);
+        }
+
+        void ShowPurchases(Object^, EventArgs^)
+        {
+            ShowOnly(purchasesPage);
+        }
+
+        void ExitApp(Object^, EventArgs^)
+        {
+            Application::Exit();
+        }
+
+        void BuildSeats()
+        {
+            seatGrid->Controls->Clear();
+            seatButtons = gcnew array<GlowButton^>(30);
+
+            for (int i = 0; i < 30; i++)
+            {
+                GlowButton^ s = Btn(String::Format("{0}{1}", (Char)('A' + (i / 6)), (i % 6) + 1), 0, 0, 72, 46, C_IND, Color::White);
+                s->Margin = System::Windows::Forms::Padding(5, 7, 5, 7);
+                s->Tag = i;
+                s->Font = gcnew Drawing::Font("Segoe UI", 9.5f, FontStyle::Bold);
+                s->Click += gcnew EventHandler(this, &RecreoHubForm::SeatClicked);
+                seatButtons[i] = s;
+                seatGrid->Controls->Add(s);
+            }
+        }
+
+        void SeatClicked(Object^ s, EventArgs^)
+        {
+            GlowButton^ b = (GlowButton^)s;
+            int i = safe_cast<int>(b->Tag);
+            if (seatBooked[i]) return;
+            seatSelected[i] = !seatSelected[i];
+            b->ColorA = b->ColorB = seatSelected[i] ? GOLD : C_IND;
+            b->Invalidate();
+        }
+
+        void GenreChanged(Object^, EventArgs^)
+        {
+            movieBox->Items->Clear();
+            String^ sel = genreBox->SelectedItem->ToString();
+            for each(MovieItem ^ m in movies) if (m->Genre == sel) movieBox->Items->Add(m);
+            if (movieBox->Items->Count > 0) movieBox->SelectedIndex = 0;
+        }
+
+        int CountSel()
+        {
+            int c = 0;
+            for each(bool b in seatSelected) if (b) c++;
+            return c;
+        }
+
+        String^ SeatNames()
+        {
+            String^ s = "";
+            for (int i = 0; i < 30; i++) if (seatSelected[i]) s += String::Format("{0}{1} ", (Char)('A' + (i / 6)), (i % 6) + 1);
+            return s;
+        }
+
+        void BookCinemaSeats(Object^, EventArgs^)
+        {
+            if (movieBox->SelectedItem == nullptr)
+            {
+                cinemaReceipt->Text = "Select a movie first.";
+                return;
+            }
+
+            int tix = Decimal::ToInt32(ticketCount->Value);
+            int sel = CountSel();
+
+            if (sel != tix)
+            {
+                cinemaReceipt->Text = String::Format("Need {0} seats, selected {1}.", tix, sel);
+                return;
+            }
+
+            double total = tix * 1200.0;
+            bool disc = tix > 2;
+            if (disc) total *= 0.9;
+            String^ names = SeatNames();
+
+            for (int i = 0; i < 30; i++)
+            {
+                if (seatSelected[i])
+                {
+                    seatBooked[i] = true;
+                    seatSelected[i] = false;
+                    seatButtons[i]->ColorA = seatButtons[i]->ColorB = C_CIN;
+                    seatButtons[i]->Invalidate();
+                }
+            }
+            MovieItem^ m = (MovieItem^)movieBox->SelectedItem;
+            RecordEarning("CinemaHouseEarnings.txt", total);
+            cinemaReceipt->Text = String::Format("BOOKING CONFIRMED\r\nMovie:    {0}\r\nDuration: {1}\r\nRelease:  {2}\r\nDate:     31 Dec 2024\r\nTickets:  {3}\r\nSeats:    {4}\r\nDiscount: {5}\r\nTotal:    Rs {6}",
+                m->Name, m->Duration, m->Year, tix, names, disc ? "10%" : "None", total);
+        }
+
+        void ClearSeatSelection(Object^, EventArgs^)
+        {
+            for (int i = 0; i < 30; i++)
+            {
+                if (!seatBooked[i])
+                {
+                    seatSelected[i] = false;
+                    seatButtons[i]->ColorA = seatButtons[i]->ColorB = C_IND;
+                    seatButtons[i]->Invalidate();
+                }
+            }
+            cinemaReceipt->Clear();
+        }
+
+        void CoffeeCategoryChanged(Object^, EventArgs^)
+        {
+            productGrid->Controls->Clear();
+            String^ cat = coffeeCategoryBox->SelectedItem->ToString();
+
+            for each(ProductItem ^ p in products) if (p->Category == cat)
+            {
+                GlowButton^ b = Btn(String::Format("{0}\r\nRs {1}", p->Name, p->Price), 0, 0, 205, 64, C_ARC, Color::White);
+                b->ColorA = Color::FromArgb(124, 58, 237);
+                b->ColorB = Color::FromArgb(79, 70, 229);
+                b->Tag = p;
+                b->Margin = System::Windows::Forms::Padding(6);
+                b->Font = gcnew Drawing::Font("Segoe UI", 9.2f, FontStyle::Bold);
+                b->Click += gcnew EventHandler(this, &RecreoHubForm::AddProductToOrder);
+                productGrid->Controls->Add(b);
+            }
+        }
+
+        void AddProductToOrder(Object^ s, EventArgs^)
+        {
+            ProductItem^ p = (ProductItem^)((GlowButton^)s)->Tag;
+            orderList->Items->Add(p->ToString());
+            coffeeBill += p->Price;
+            UpdateBill();
+        }
+
+        void AddCoffeeExtras(Object^, EventArgs^)
+        {
+            if (blendBox->Checked)
+            {
+                orderList->Items->Add("Blend  +Rs 100");
+                coffeeBill += 100;
+                blendBox->Checked = false;
+            }
+            if (shotBox->Checked)
+            {
+                orderList->Items->Add("Shot   +Rs 175");
+                coffeeBill += 175;
+                shotBox->Checked = false;
+            }
+            if (sauceBox->Checked)
+            {
+                orderList->Items->Add("Sauce  +Rs 175");
+                coffeeBill += 175;
+                sauceBox->Checked = false;
+            }
+            if (cheeseBox->Checked)
+            {
+                orderList->Items->Add("Cheese +Rs 225");
+                coffeeBill += 225;
+                cheeseBox->Checked = false;
+            }
+            UpdateBill();
+        }
+
+        void CheckoutCoffee(Object^, EventArgs^)
+        {
+            if (coffeeBill <= 0)
+            {
+                coffeeReceipt->Text = "Add an item first.";
+                return;
+            }
+            RecordEarning("CoffeeShopEarnings.txt", coffeeBill);
+            coffeeReceipt->Text = String::Format("Order recorded. Total: Rs {0}", coffeeBill);
+        }
+
+        void ClearCoffeeOrder(Object^, EventArgs^)
+        {
+            orderList->Items->Clear();
+            coffeeBill = 0;
+            coffeeReceipt->Clear();
+            UpdateBill();
+        }
+
+        void UpdateBill()
+        {
+            coffeeBillLabel->Text = String::Format("Bill: Rs {0}", coffeeBill);
+        }
+
+        void SetGameBtns(bool en)
+        {
+            for each(Control ^ c in indoorGameBox->Controls)
+            {
+                GlowButton^ b = dynamic_cast<GlowButton^>(c);
+                if (b)
+                {
+                    b->Enabled = en;
+                }
+            }
+        }
+
+        void ValidateMemberGUI(Object^, EventArgs^)
+        {
+            if (memberUserBox->Text == "member" && memberPassBox->Text == "password123")
+            {
+                indoorOutput->Text = "Access granted. Choose a game above.";
+                SetGameBtns(true);
+            }
+            else
+            {
+                indoorOutput->Text = "Denied.\r\nUsername: member  |  Password: password123";
+                SetGameBtns(false);
+            }
+        }
+
+        void PlaySnookerGUI(Object^, EventArgs^)
+        {
+            int p1 = 0, p2 = 0; String^ t = "-- Snooker (5 rounds) --\r\n";
+            for (int r = 1; r <= 5; r++)
+            {
+                int a = rnd->Next(1, 11), b = rnd->Next(1, 11);
+                p1 += a;
+                p2 += b;
+                t += String::Format("Round {0}: P1 +{1}  P2 +{2}\r\n", r, a, b);
+            }
+            t += String::Format("\r\nP1:{0}  P2:{1}\r\n{2}", p1, p2, p1 > p2 ? "Player 1 Wins!" : p2 > p1 ? "Player 2 Wins!" : "Draw!");
+            indoorOutput->Text = t;
+        }
+
+        void PlayTableTennisGUI(Object^, EventArgs^)
+        {
+            int p1 = 0, p2 = 0;
+            while (p1 < 11 && p2 < 11)
+            {
+                int a = rnd->Next(0, 2), b = rnd->Next(0, 2);
+                if (a > b)
+                {
+                    p1++;
+                }
+                else if (b > a)
+                {
+                    p2++;
+                }
+            }
+            indoorOutput->Text = String::Format("-- Table Tennis --\r\nP1: {0}  P2: {1}\r\n{2}", p1, p2, p1 > p2 ? "P1 wins!" : "P2 wins!");
+        }
+
+        void PlaySquashGUI(Object^, EventArgs^)
+        {
+            int p1 = 0, p2 = 0;
+            while (p1 < 21 && p2 < 21)
+            {
+                int a = rnd->Next(0, 2), b = rnd->Next(0, 2);
+                if (a > b)
+                {
+                    p1++;
+                }
+                else if (b > a)
+                {
+                    p2++;
+                }
+            }
+            indoorOutput->Text = String::Format("-- Squash --\r\nP1: {0}  P2: {1}\r\n{2}", p1, p2, p1 > p2 ? "P1 wins!" : "P2 wins!");
+        }
+
+        void BuildHangmanBox(GlassBox^ box)
+        {
+            box->Controls->Add(L("Hangman", 22, 20, 250, 30, 15, FontStyle::Bold, IVORY));
+
+            hangDisplay = L("_ _ _ _ _", 22, 82, 285, 48, 22, FontStyle::Bold, C_ARC);
+            hangDisplay->TextAlign = ContentAlignment::MiddleCenter;
+
+            hangStatus = L("Press New Game", 22, 136, 285, 34, 9.5f, FontStyle::Regular, MUTED);
+            hangStatus->TextAlign = ContentAlignment::MiddleCenter;
+
+            hangInput = Inp(73, 188, 78);
+
+            GlowButton^ g = Btn("Guess", 167, 182, 115, 40, C_ARC, Color::White);
+
+            GlowButton^ n = Btn("New Game", 92, 244, 170, 42, GOLD, Color::FromArgb(15, 15, 30));
+
+            g->Click += gcnew EventHandler(this, &RecreoHubForm::GuessHangman);
+            n->Click += gcnew EventHandler(this, &RecreoHubForm::NewHangman);
+
+            box->Controls->Add(hangDisplay);
+            box->Controls->Add(hangStatus);
+            box->Controls->Add(hangInput);
+            box->Controls->Add(g);
+            box->Controls->Add(n);
+
+            NewHangman(nullptr, nullptr);
+        }
+
+        void NewHangman(Object^, EventArgs^)
+        {
+            array<String^>^ w = gcnew array<String^>
+            {
+                "apple", "house", "train", "table", "chair"
+            };
+            hangWord = w[rnd->Next(w->Length)];
+            hangGuessed = gcnew array<bool>
+                (
+                    hangWord->Length
+                );
+            hangAttempts = 6;
+            hangStatus->Text = "Attempts left: 6";
+            hangInput->Clear();
+            UpdateHangDisp();
+        }
+
+        void UpdateHangDisp()
+        {
+            String^ d = "";
+            bool done = true;
+            for (int i = 0; i < hangWord->Length; i++)
+            {
+                if (hangGuessed[i])
+                {
+                    d += hangWord[i].ToString() + " ";
+                }
+                else
+                {
+                    d += "_ ";
+                    done = false;
+                }
+            }
+            hangDisplay->Text = d->Trim();
+            if (done)
+            {
+                hangStatus->Text = "You got it: " + hangWord;
+            }
+        }
+
+        void GuessHangman(Object^, EventArgs^)
+        {
+            if (hangInput->Text->Length == 0 || hangAttempts <= 0)
+            {
+                return;
+            }
+            Char g = Char::ToLower(hangInput->Text[0]);
+            bool ok = false;
+            for (int i = 0; i < hangWord->Length; i++)
+            {
+                if (hangWord[i] == g && !hangGuessed[i])
+                {
+                    hangGuessed[i] = true;
+                    ok = true;
+                }
+            }
+            if (!ok)
+            {
+                hangAttempts--;
+            }
+            hangStatus->Text = hangAttempts > 0 ? String::Format("{0}  Attempts: {1}", ok ? "Correct!" : "Wrong.", hangAttempts) : "Game over! Word: " + hangWord;
+            hangInput->Clear();
+            UpdateHangDisp();
+        }
+
+        void BuildNumberBox(GlassBox^ box)
+        {
+            box->Controls->Add(L("Guess Number", 22, 20, 250, 30, 15, FontStyle::Bold, IVORY));
+
+            numberStatus = L("I picked 1-10. You have 5 tries.", 22, 78, 285, 52, 10, FontStyle::Regular, MUTED);
+            numberStatus->TextAlign = ContentAlignment::MiddleCenter;
+
+            numberInput = Inp(55, 153, 110);
+
+            GlowButton^ g = Btn("Guess", 181, 148, 120, 40, C_COF, Color::White);
+
+            GlowButton^ n = Btn("New Number", 92, 218, 170, 42, GOLD, Color::FromArgb(15, 15, 30));
+
+            g->Click += gcnew EventHandler(this, &RecreoHubForm::GuessNumber);
+            n->Click += gcnew EventHandler(this, &RecreoHubForm::NewNumber);
+
+            box->Controls->Add(numberStatus);
+            box->Controls->Add(numberInput);
+            box->Controls->Add(g);
+            box->Controls->Add(n);
+
+            NewNumber(nullptr, nullptr);
+        }
+
+        void NewNumber(Object^, EventArgs^)
+        {
+            numberTarget = rnd->Next(1, 11);
+            numberAttempts = 5;
+            numberInput->Clear();
+            numberStatus->Text = "I picked 1-10. You have 5 tries.";
+        }
+
+        void GuessNumber(Object^, EventArgs^)
+        {
+            int g = 0;
+            if (!Int32::TryParse(numberInput->Text, g))
+            {
+                numberStatus->Text = "Enter a number.";
+                return;
+            }
+            if (g < 1 || g>10)
+            {
+                numberStatus->Text = "Between 1 and 10.";
+                return;
+            }
+            if (g == numberTarget)
+            {
+                numberStatus->Text = "Correct!";
+                return;
+            }
+
+            numberAttempts--;
+            numberStatus->Text = numberAttempts <= 0 ? "Game over! Answer: " + numberTarget : String::Format("{0}. Tries: {1}", g < numberTarget ? "Too low" : "Too high", numberAttempts);
+            numberInput->Clear();
+        }
+
+        void BuildTicTacToeBox(GlassBox^ box)
+        {
+            box->Controls->Add(L("Tic Tac Toe", 22, 20, 280, 30, 15, FontStyle::Bold, IVORY));
+            tttStatus = L("Player X's turn", 26, 66, 285, 24, 10, FontStyle::Bold, C_IND);
+            tttButtons = gcnew array<GlowButton^>(9);
+            tttBoard = gcnew array<Char>(9);
+
+            for (int i = 0; i < 9; i++)
+            {
+                tttBoard[i] = ' ';
+            }
+            for (int i = 0; i < 9; i++)
+            {
+                GlowButton^ b = Btn("", 66 + (i % 3) * 80, 104 + (i / 3) * 72, 62, 56, Color::FromArgb(22, 26, 55), IVORY);
+                b->Tag = i;
+                b->Font = gcnew Drawing::Font("Segoe UI", 18, FontStyle::Bold);
+                b->Ghost = false;
+                b->ColorA = Color::FromArgb(18, 24, 50);
+                b->ColorB = Color::FromArgb(30, 41, 82);
+                b->Click += gcnew EventHandler(this, &RecreoHubForm::TicMove);
+                tttButtons[i] = b;
+                box->Controls->Add(b);
+            }
+            GlowButton^ r = Btn("Restart", 88, 330, 180, 42, GOLD, Color::FromArgb(15, 15, 30));
+            r->Click += gcnew EventHandler(this, &RecreoHubForm::RestartTic);
+            box->Controls->Add(tttStatus);
+            box->Controls->Add(r);
+            currentPlayer = 'X';
+        }
+
+        void RestartTic(Object^, EventArgs^)
+        {
+            for (int i = 0; i < 9; i++)
+            {
+                tttBoard[i] = ' ';
+                tttButtons[i]->Text = "";
+                tttButtons[i]->Ghost = false;
+                tttButtons[i]->ColorA = Color::FromArgb(18, 24, 50);
+                tttButtons[i]->ColorB = Color::FromArgb(30, 41, 82);
+                tttButtons[i]->Enabled = true;
+                tttButtons[i]->Invalidate();
+            }
+            currentPlayer = 'X';
+            tttStatus->Text = "Player X's turn";
+            tttStatus->ForeColor = C_IND;
+        }
+
+        void TicMove(Object^ s, EventArgs^)
+        {
+            GlowButton^ b = (GlowButton^)s;
+            int i = safe_cast<int>(b->Tag);
+
+            if (tttBoard[i] != ' ')return;
+            tttBoard[i] = currentPlayer;
+            b->Text = currentPlayer.ToString();
+            b->ColorA = currentPlayer == 'X' ? C_IND : TT_BLUE;
+            b->ColorB = currentPlayer == 'X' ? ControlPaint::Light(C_IND, 0.18f) : TT_BLUE_LT;
+            b->Ghost = false;
+            b->Invalidate();
+
+            Char w = TicWin();
+
+            if (w != ' ')
+            {
+                tttStatus->Text = String::Format("Player {0} Wins!", w);
+                tttStatus->ForeColor = GOLD;
+                for each(GlowButton ^ bt in tttButtons)bt->Enabled = false;
+            }
+            else if (TicFull())
+            {
+                tttStatus->Text = "Draw!";
+                tttStatus->ForeColor = MUTED;
+            }
+            else
+            {
+                currentPlayer = currentPlayer == 'X' ? 'O' : 'X';
+                tttStatus->Text = String::Format("Player {0}'s turn", currentPlayer);
+                tttStatus->ForeColor = currentPlayer == 'X' ? C_IND : TT_BLUE_LT;
+            }
+        }
+
+        Char TicWin()
+        {
+            array<int>^ l = gcnew array<int>
+            {
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 3, 6, 1, 4, 7, 2, 5, 8, 0, 4, 8, 2, 4, 6
+            };
+            for (int i = 0; i < l->Length; i += 3) if (tttBoard[l[i]] != ' ' && tttBoard[l[i]] == tttBoard[l[i + 1]] && tttBoard[l[i + 1]] == tttBoard[l[i + 2]]) return tttBoard[l[i]];
+            return ' ';
+        }
+
+        bool TicFull()
+        {
+            for each(Char c in tttBoard) if (c == ' ')return false;
+            return true;
+        }
+
+        void ViewEarningsGUI(Object^, EventArgs^)
+        {
+            if (adminUserBox->Text != "admin" || adminPassBox->Text != "1234")
+            {
+                earningsBox->Text = "Invalid credentials.";
+                return;
+            }
+            double ci = ReadTotal("CinemaHouseEarnings.txt"), co = ReadTotal("CoffeeShopEarnings.txt");
+            earningsBox->Text = String::Format("EARNINGS REPORT\r\n------------------------\r\nCinema House   Rs {0}\r\nCoffee Shop    Rs {1}\r\n------------------------\r\nTotal          Rs {2}", ci, co, ci + co);
+        }
+        void RecordEarning(String^ f, double amt)
+        {
+            File::AppendAllText(f, amt.ToString(CultureInfo::InvariantCulture) + Environment::NewLine);
+        }
+
+        double ReadTotal(String^ f)
+        {
+            double t = 0;
+            if (!File::Exists(f))return 0;
+            for each(String ^ l in File::ReadAllLines(f))
+            {
+                double v = 0;
+                if (Double::TryParse(l, NumberStyles::Any, CultureInfo::InvariantCulture, v))t += v;
+            }
+            return t;
+        }
+
+        void OnTick(Object^, EventArgs^)
+        {
+
+            scene += 0.014f;
+
+            array<SmoothPanel^>^ allPages = gcnew array<SmoothPanel^>
+            {
+                welcomePage,
+                dashboardPage,
+                explorePage,
+                cinemaPage,
+                coffeePage,
+                indoorPage,
+                arcadePage,
+                purchasesPage
+            };
+
+            for each(SmoothPanel ^ page in allPages)
+            {
+                if (page != nullptr && page->Visible)
+                {
+
+                    page->Invalidate();
+
+                    break;
+                }
+            }
+        }
+
+        void PaintPage(Object^ s, PaintEventArgs^ e)
+        {
+            SmoothPanel^ p = (SmoothPanel^)s;
+            Graphics^ g = e->Graphics;
+            g->SmoothingMode = SmoothingMode::AntiAlias;
+
+            if (p == welcomePage)
+            {
+                PaintHero(g, p->Width, p->Height);
+                return;
+            }
+            PaintSubBg(g, p->Width, p->Height);
+        }
+
+        void PaintBubbleBackground(Graphics^ g, int w, int h, bool isHeroPage)
+        {
+            Rectangle bg = Rectangle(0, 0, w, h);
+
+            LinearGradientBrush^ bgBrush = gcnew LinearGradientBrush
+            (
+                bg,
+                Color::FromArgb(8, 8, 26),
+                Color::FromArgb(24, 8, 46),
+                135.0f
+            );
+
+            g->FillRectangle(bgBrush, bg);
+            delete bgBrush;
+
+            array<float>^ ox = gcnew array<float>
+            {
+                0.10f, 0.85f, 0.45f, 0.20f, 0.75f,
+                0.55f, 0.30f, 0.65f, 0.90f, 0.15f
+            };
+
+            array<float>^ oy = gcnew array<float>
+            {
+                0.15f, 0.80f, 0.50f, 0.75f, 0.25f,
+                0.60f, 0.40f, 0.10f, 0.65f, 0.55f
+            };
+
+            array<float>^ rx = gcnew array<float>
+            {
+                260.0f, 220.0f, 310.0f, 180.0f, 240.0f,
+                290.0f, 200.0f, 270.0f, 200.0f, 230.0f
+            };
+
+            array<float>^ ry = gcnew array<float>
+            {
+                220.0f, 260.0f, 200.0f, 300.0f, 240.0f,
+                180.0f, 280.0f, 200.0f, 260.0f, 310.0f
+            };
+
+            array<Color>^ orbColors = gcnew array<Color>
+            {
+                Color::FromArgb(255, 0, 110),
+                Color::FromArgb(131, 56, 236),
+                Color::FromArgb(58, 134, 255),
+                Color::FromArgb(6, 255, 180),
+                Color::FromArgb(255, 183, 0),
+                Color::FromArgb(255, 77, 109),
+                Color::FromArgb(0, 245, 212),
+                Color::FromArgb(247, 37, 133),
+                Color::FromArgb(114, 9, 183),
+                Color::FromArgb(0, 180, 90)
+            };
+
+            for (int i = 0; i < 10; i++)
+            {
+
+                float cx = ox[i] * (float)w +
+                    rx[i] * (float)Math::Sin(scene * (0.25f + i * 0.02f) + i * 0.9f);
+
+                float cy = oy[i] * (float)h +
+                    ry[i] * (float)Math::Cos(scene * (0.28f + i * 0.02f) + i * 1.1f);
+
+                for (int k = 3; k >= 1; k--)
+                {
+                    float scale = (float)k;
+
+                    g->FillEllipse
+                    (
+                        gcnew SolidBrush(Color::FromArgb(18 / k, orbColors[i])),
+                        cx - rx[i] * scale * 0.55f,
+                        cy - ry[i] * scale * 0.55f,
+                        rx[i] * scale * 1.1f,
+                        ry[i] * scale * 1.1f
+                    );
+                }
+            }
+
+            for (int i = 0; i < 70; i++)
+            {
+                float px = (float)((i * 137 + (int)(scene * 60 * ((i % 3) + 1))) % Math::Max(1, w));
+                float py = (float)((i * 89 + (int)(scene * 40 * ((i % 4) + 1))) % Math::Max(1, h));
+                float size = (float)(1 + (i % 3));
+
+                int alpha = isHeroPage ? 160 : 105;
+
+                g->FillEllipse
+                (
+                    gcnew SolidBrush(Color::FromArgb(alpha, 255, 255, 255)),
+                    px,
+                    py,
+                    size,
+                    size
+                );
+            }
+
+            RectangleF bottomFade = RectangleF(0.0f, (float)(h - 190), (float)w, 190.0f);
+
+            LinearGradientBrush^ bottomBrush = gcnew LinearGradientBrush
+            (
+                bottomFade,
+                Color::FromArgb(0, 0, 0, 0),
+                Color::FromArgb(80, 0, 0, 0),
+                90.0f
+            );
+
+            g->FillRectangle(bottomBrush, bottomFade);
+            delete bottomBrush;
+        }
+
+        void PaintSubBg(Graphics^ g, int w, int h)
+        {
+            PaintBubbleBackground(g, w, h, false);
+
+            int headerHeight = 85;
+
+            int goldThickness = 1;
+
+            g->FillRectangle
+            (
+                gcnew SolidBrush(Color::FromArgb(120, 7, 7, 21)),
+                Rectangle(0, 0, w, headerHeight)
+            );
+
+            g->FillRectangle
+            (
+                gcnew SolidBrush(GOLD),
+                Rectangle(0, headerHeight - goldThickness, w, goldThickness)
+            );
+
+            g->DrawLine
+            (
+                gcnew Pen(Color::FromArgb(60, GOLD), 1.0f),
+                0.0f,
+                (float)headerHeight,
+                (float)w,
+                (float)headerHeight
+            );
+        }
+
+        GraphicsPath^ RR(RectangleF r, float rad)
+        {
+            GraphicsPath^ p = gcnew GraphicsPath();
+            float d = rad * 2.0f;
+            p->AddArc(r.X, r.Y, d, d, 180.0f, 90.0f);
+            p->AddArc(r.Right - d, r.Y, d, d, 270.0f, 90.0f);
+            p->AddArc(r.Right - d, r.Bottom - d, d, d, 0.0f, 90.0f);
+            p->AddArc(r.X, r.Bottom - d, d, d, 90.0f, 90.0f);
+            p->CloseFigure();
+            return p;
+        }
+
+        void LoadHeroLogo()
+        {
+            heroLogo = nullptr;
+
+            array<String^>^ logoFiles = gcnew array<String^>
+            {
+                "recreohub_logo.gif",
+                "recreohub_logo.png",
+                "recreohub_logo.jpg",
+                "recreohub_logo.jpeg"
+            };
+
+            for each(String ^ fileName in logoFiles)
+            {
+                if (File::Exists(fileName))
+                {
+                    heroLogo = Image::FromFile(fileName);
+                    break;
+                }
+            }
+
+            if (heroLogo != nullptr && ImageAnimator::CanAnimate(heroLogo))
+            {
+                ImageAnimator::Animate(heroLogo, gcnew EventHandler(this, &RecreoHubForm::LogoFrameChanged));
+            }
+        }
+
+        void LogoFrameChanged(Object^, EventArgs^)
+        {
+            if (welcomePage != nullptr && welcomePage->Visible)
+            {
+                welcomePage->Invalidate(Rectangle(30, 0, 430, 80));
+            }
+        }
+
+        void DrawGradientText(Graphics^ g, String^ text, float x, float y, float w, float h, float size, String^ fontName, FontStyle fontStyle, array<Color>^ colors)
+        {
+            g->SmoothingMode = SmoothingMode::AntiAlias;
+            g->TextRenderingHint = TextRenderingHint::AntiAliasGridFit;
+
+            Drawing::Font^ textFont = gcnew Drawing::Font(fontName, size, fontStyle);
+
+            RectangleF textRect = RectangleF(x, y, w, h);
+
+            StringFormat^ format = gcnew StringFormat();
+
+            format->Alignment = StringAlignment::Near;
+            format->LineAlignment = StringAlignment::Center;
+            format->FormatFlags = StringFormatFlags::NoWrap;
+
+            SolidBrush^ shadowBrush = gcnew SolidBrush(Color::FromArgb(135, 0, 0, 0));
+
+            g->DrawString
+            (
+                text,
+                textFont,
+                shadowBrush,
+                RectangleF(x + 3.0f, y + 4.0f, w, h),
+                format
+            );
+
+            delete shadowBrush;
+
+            LinearGradientBrush^ gradientBrush = gcnew LinearGradientBrush
+            (
+                textRect,
+                colors[0],
+                colors[colors->Length - 1],
+                0.0f
+            );
+
+            if (colors->Length > 1)
+            {
+                ColorBlend^ blend = gcnew ColorBlend(colors->Length);
+
+                blend->Colors = colors;
+
+                array<float>^ positions = gcnew array<float>(colors->Length);
+
+                for (int i = 0; i < colors->Length; i++)
+                {
+                    positions[i] = (float)i / (float)(colors->Length - 1);
+                }
+
+                blend->Positions = positions;
+                gradientBrush->InterpolationColors = blend;
+            }
+
+            g->DrawString
+            (
+                text,
+                textFont,
+                gradientBrush,
+                textRect,
+                format
+            );
+
+            delete gradientBrush;
+            delete format;
+            delete textFont;
+        }
+
+        void DrawHeroTitleBlock(Graphics^ g)
+        {
+            if (heroLogo != nullptr)
+            {
+                if (ImageAnimator::CanAnimate(heroLogo))
+                {
+                    ImageAnimator::UpdateFrames(heroLogo);
+                }
+
+                g->DrawImage(heroLogo, Rectangle(40, 8, 180, 70));
+            }
+            else
+            {
+                RectangleF logoBox = RectangleF(38.0f, 10.0f, 34.0f, 34.0f);
+
+                GraphicsPath^ logoPath = RR(logoBox, 9.0f);
+
+                LinearGradientBrush^ logoBrush = gcnew LinearGradientBrush
+                (
+                    logoBox,
+                    Color::FromArgb(255, 190, 55),
+                    Color::FromArgb(160, 85, 255),
+                    135.0f
+                );
+
+                g->FillPath(logoBrush, logoPath);
+                g->DrawPath(gcnew Pen(Color::FromArgb(130, 255, 255, 255), 1.0f), logoPath);
+
+                TextRenderer::DrawText
+                (
+                    g,
+                    "R",
+                    gcnew Drawing::Font("Segoe UI Black", 15.0f, FontStyle::Bold),
+                    Rectangle(38, 10, 34, 34),
+                    Color::White,
+                    TextFormatFlags::HorizontalCenter | TextFormatFlags::VerticalCenter
+                );
+
+                delete logoBrush;
+                delete logoPath;
+            }
+
+            DrawGradientText
+            (
+                g,
+                "Recreation Center Management",
+                240.0f,
+                15.0f,
+                560.0f,
+                52.0f,
+                22.0f,
+                "Cooper Black",
+                FontStyle::Regular,
+                gcnew array<Color>
+            {
+                Color::FromArgb(255, 95, 120),
+                    Color::FromArgb(255, 200, 65),
+                    Color::FromArgb(80, 235, 210),
+                    Color::FromArgb(105, 165, 255),
+                    Color::FromArgb(190, 100, 255)
+            }
+            );
+            RectangleF lineRect = RectangleF(245.0f, 57.0f, 455.0f, 4.0f);
+
+            LinearGradientBrush^ lineBrush = gcnew LinearGradientBrush
+            (
+                lineRect,
+                Color::FromArgb(255, 205, 70),
+                Color::FromArgb(180, 95, 255),
+                0.0f
+            );
+
+            g->FillRectangle(lineBrush, lineRect);
+            delete lineBrush;
+
+            DrawGradientText
+            (
+                g,
+                "Where Every",
+                38.0f,
+                108.0f,
+                570.0f,
+                76.0f,
+                40.0f,
+                "Arial Rounded MT Bold",
+                FontStyle::Bold,
+                gcnew array<Color>
+            {
+                Color::FromArgb(255, 255, 255),
+                    Color::FromArgb(246, 252, 255),
+                    Color::FromArgb(220, 242, 255)
+            }
+            );
+
+            DrawGradientText
+            (
+                g,
+                "Moment Shines.",
+                38.0f,
+                181.0f,
+                620.0f,
+                80.0f,
+                40.0f,
+                "Segoe Script",
+                FontStyle::Bold,
+                gcnew array<Color>
+            {
+                Color::FromArgb(255, 216, 88),
+                    Color::FromArgb(255, 248, 225),
+                    Color::FromArgb(255, 194, 62)
+            }
+            );
+        }
+
+        void PaintHero(Graphics^ g, int w, int h)
+        {
+            Rectangle area = Rectangle(0, 0, w, h);
+            LinearGradientBrush^ sky = gcnew LinearGradientBrush
+            (area,
+                Color::FromArgb(6, 6, 18),
+                Color::FromArgb(22, 12, 55),
+                90.0f
+            );
+            g->FillRectangle(sky, area);
+            delete sky;
+
+            RectangleF hg = RectangleF(0.0f, (float)(h - 280), (float)w, 280.0f);
+            LinearGradientBrush^ hgb = gcnew LinearGradientBrush(hg,
+                Color::FromArgb(0, 15, 30, 80), Color::FromArgb(55, 10, 20, 55), 90.0f);
+            g->FillRectangle(hgb, hg); delete hgb;
+
+            for (int i = 0; i < 120; i++)
+            {
+                int sx = (i * 139 + 23) % w, sy = (i * 83 + 17) % (h - 200);
+                float brightness = (float)(0.4 + 0.6 * Math::Abs(Math::Sin(scene * 0.8 + i * 0.3)));
+                int alpha = (int)(brightness * (i % 3 == 0 ? 200 : i % 3 == 1 ? 140 : 90));
+                float sz = (float)(i % 3 == 0 ? 2.8f : i % 3 == 1 ? 1.8f : 1.0f);
+                g->FillEllipse(gcnew SolidBrush(Color::FromArgb(alpha, 220, 230, 255)),
+                    (float)sx, (float)sy, sz, sz);
+            }
+
+            int cx = w / 2; int cy = h - 200;
+            float ang1 = (float)(Math::Sin(scene * 0.7) * 0.25);
+            float ang2 = (float)(Math::Sin(scene * 0.7 + 1.8) * 0.25);
+            DrawSpotlight(g, cx - 180, -30, cx + (int)(ang1 * 600), cy, Color::FromArgb(18, 180, 210, 255));
+            DrawSpotlight(g, cx + 180, -30, cx + (int)(ang2 * 600), cy, Color::FromArgb(16, 255, 210, 140));
+
+            int vpx = w / 2, vpy = h - 280;
+            int floorY = h - 50;
+            int floorTop = h - 270;
+
+            Pen^ gpen = gcnew Pen(Color::FromArgb(30, 0, 230, 200), 1.0f);
+            for (int gx = -8; gx <= 8; gx++)
+            {
+                int bx = vpx + gx * 130;
+                g->DrawLine(gpen, vpx, vpy, bx, floorY);
+            }
+
+            for (int row = 0; row < 10; row++)
+            {
+                float t = (float)row / 9.0f;
+                float fy = (float)floorTop + (float)(floorY - floorTop) * t;
+                float xspan = (float)((w + 200) * t);
+                g->DrawLine(gpen, (float)(vpx - xspan / 2), fy, (float)(vpx + xspan / 2), fy);
+            }
+            delete gpen;
+
+            DrawBuilding(g, 530, h - 455, 145, 255, C_CIN, "CINEMA");
+            DrawBuilding(g, 715, h - 490, 150, 290, C_IND, "INDOOR");
+            DrawBuilding(g, 905, h - 515, 155, 315, C_COF, "CAFE");
+            DrawBuilding(g, 1100, h - 455, 145, 255, C_ARC, "ARCADE");
+
+            Rectangle road = Rectangle(0, h - 145, w, 145);
+            LinearGradientBrush^ rb = gcnew LinearGradientBrush(road,
+                Color::FromArgb(255, 18, 20, 32), Color::FromArgb(255, 10, 11, 22), 90.0f);
+            g->FillRectangle(rb, road);
+            delete rb;
+
+            g->FillRectangle(gcnew SolidBrush(Color::FromArgb(255, 22, 26, 44)), Rectangle(0, h - 145, w, 36));
+            g->DrawLine(gcnew Pen(Color::FromArgb(100, 62, 207, 178), 2.0f), 0.0f, (float)(h - 145), (float)w, (float)(h - 145));
+            g->DrawLine(gcnew Pen(Color::FromArgb(80, 255, 255, 255), 1.5f), 0.0f, (float)(h - 109), (float)w, (float)(h - 109));
+
+            Pen^ lane = gcnew Pen(Color::FromArgb(160, 240, 165, 0), 4.0f);
+            lane->DashStyle = DashStyle::Dash; lane->DashPattern = gcnew array<float>
+            {
+                14, 10
+            };
+            g->DrawLine(lane, 0.0f, (float)(h - 72), (float)w, (float)(h - 72));
+            delete lane;
+
+            for (int zi = 0; zi < 40; zi++)
+            {
+                int zx = zi * 40;
+                g->FillRectangle(gcnew SolidBrush(Color::FromArgb(130, 240, 245, 255)), zx, h - 145, 24, 36);
+            }
+
+            for (int i = 0; i < 8; i++)
+            {
+                float px = (float)((i * 168 + (int)(scene * 60)) % (w + 80) - 40);
+                float py = (float)(h - 144 + Math::Sin(scene * 3 + i) * 4);
+                DrawPerson(g, px, py, i);
+            }
+
+            array<Color>^ carC = gcnew array<Color>
+            {
+                C_CIN, GOLD, C_IND, C_ARC
+            };
+
+            for (int i = 0; i < 4; i++)
+            {
+                float cx2 = (float)((i * 330 + (int)(scene * 68)) % (w + 140) - 140);
+                float cy2 = (float)(h - 100 + (i % 2) * 26);
+                DrawCar(g, cx2, cy2, carC[i], i % 2 == 0);
+            }
+
+            for each(Particle ^ p in particles)
+            {
+                float alpha = (float)(0.4 + 0.5 * Math::Sin(scene + p->phase));
+                int a = (int)(alpha * 180);
+
+                a = Math::Max(0, Math::Min(255, a));
+                g->FillEllipse(gcnew SolidBrush(Color::FromArgb(a, p->col)),
+                    p->x, p->y, p->size, p->size);
+
+            }
+
+            g->FillRectangle
+            (
+                gcnew SolidBrush(Color::FromArgb(215, 6, 6, 18)),
+                Rectangle(0, 0, w, 85)
+            );
+
+            g->FillRectangle
+            (
+                gcnew SolidBrush(GOLD),
+                Rectangle(0, 0, w, 4)
+            );
+
+            g->DrawLine
+            (
+                gcnew Pen(Color::FromArgb(110, GOLD), 1.5f),
+                0.0f,
+                85.0f,
+                (float)w,
+                85.0f
+            );
+
+            RectangleF leftFade = RectangleF(0.0f, 82.0f, 610.0f, (float)(h - 82));
+
+            LinearGradientBrush^ leftFadeBrush = gcnew LinearGradientBrush
+            (
+                leftFade,
+                Color::FromArgb(145, 6, 6, 18),
+                Color::FromArgb(0, 6, 6, 18),
+                0.0f
+            );
+
+            g->FillRectangle(leftFadeBrush, leftFade);
+            delete leftFadeBrush;
+
+            DrawHeroTitleBlock(g);
+        }
+
+        void DrawSpotlight(Graphics^ g, int tx, int ty, int bx, int by, Color c)
+        {
+            int spread = 220;
+            array<PointF>^ pts = gcnew array<PointF>
+            {
+                    PointF((float)tx, (float)ty),
+                    PointF((float)(bx - spread), (float)by),
+                    PointF((float)(bx + spread), (float)by)
+            };
+
+            PathGradientBrush^ pb = gcnew PathGradientBrush(pts);
+            pb->CenterPoint = PointF((float)tx, (float)ty);
+            pb->CenterColor = Color::FromArgb(c.A + 10, c);
+            pb->SurroundColors = gcnew array<Color>
+            {
+                Color::FromArgb(0, c)
+            };
+            g->FillPolygon(pb, pts); delete pb;
+        }
+
+        void DrawBuilding(Graphics^ g, int bx, int by, int bw, int bh, Color glow, String^ name)
+        {
+            int depth = 22;
+            array<Point>^ side = gcnew array<Point>
+            {
+                    Point(bx + bw, by + 14), Point(bx + bw + depth, by),
+                    Point(bx + bw + depth, by + bh + depth), Point(bx + bw, by + bh)
+            };
+
+            g->FillPolygon(gcnew SolidBrush(Color::FromArgb(100, Math::Max(0, glow.R / 4), Math::Max(0, glow.G / 4), Math::Max(0, glow.B / 4))), side);
+            g->DrawPolygon(gcnew Pen(Color::FromArgb(60, glow), 1.0f), side);
+
+            RectangleF facade = RectangleF((float)bx, (float)by, (float)bw, (float)bh);
+            LinearGradientBrush^ fb = gcnew LinearGradientBrush(facade,
+                Color::FromArgb(240, Math::Min(255, glow.R / 3 + 18), Math::Min(255, glow.G / 3 + 18), Math::Min(255, glow.B / 3 + 18)),
+                Color::FromArgb(240, 10, 10, 22), 90.0f);
+            g->FillRectangle(fb, facade);
+            delete fb;
+
+            Pen^ gp = gcnew Pen(Color::FromArgb(170, glow), 2.0f);
+            g->DrawRectangle(gp, (float)bx, (float)by, (float)bw, (float)bh);
+            delete gp;
+
+            g->DrawRectangle(gcnew Pen(Color::FromArgb(50, glow), 8.0f), (float)bx - 4, (float)by - 4, (float)bw + 8, (float)bh + 8);
+
+            array<Point>^ roof = gcnew array<Point>
+            {
+                Point(bx - 8, by), Point(bx + bw / 2, by - 40), Point(bx + bw + 8, by)
+            };
+
+            g->FillPolygon(gcnew SolidBrush(Color::FromArgb(200, glow.R / 4, glow.G / 4, glow.B / 4)), roof);
+            g->DrawPolygon(gcnew Pen(Color::FromArgb(160, glow), 1.5f), roof);
+
+            int cols = 4, rows = 6;
+            int ww = (bw - 20) / cols, wh = (bh - 60) / rows;
+
+            for (int r = 0; r < rows; r++) for (int c = 0; c < cols; c++)
+            {
+                int wx = bx + 10 + c * (ww + 3), wy = by + 20 + r * (wh + 3);
+                bool lit = ((r * cols + c + bx) % 3 != 0);
+                float pulse = (float)(lit ? 0.6 + 0.4 * Math::Sin(scene * 2 + r * 0.7 + c * 0.5) : 0.08);
+                Color wc = Color::FromArgb((int)(pulse * 200),
+                    Math::Min(255, (int)(glow.R * 0.9 + 80)),
+                    Math::Min(255, (int)(glow.G * 0.9 + 80)),
+                    Math::Min(255, (int)(glow.B * 0.9 + 80)));
+                g->FillRectangle(gcnew SolidBrush(wc), (float)wx, (float)wy, (float)(ww - 2), (float)(wh - 2));
+            }
+
+            RectangleF sign = RectangleF((float)(bx + bw / 2 - 50), (float)(by + bh - 55), 100.0f, 28.0f);
+            GraphicsPath^ sp = RR(sign, 8.0f);
+            g->FillPath(gcnew SolidBrush(Color::FromArgb(200, glow)), sp);
+            TextRenderer::DrawText(g, name, gcnew Drawing::Font("Segoe UI", 8, FontStyle::Bold),
+                Rectangle((int)sign.X, (int)sign.Y, (int)sign.Width, (int)sign.Height),
+                Color::White, TextFormatFlags::HorizontalCenter | TextFormatFlags::VerticalCenter);
+            delete sp;
+
+            int dx = bx + bw / 2 - 14, dy = by + bh - 36;
+            GraphicsPath^ dp = RR(RectangleF((float)dx, (float)dy, 28.0f, 36.0f), 6.0f);
+            g->FillPath(gcnew SolidBrush(Color::FromArgb(180, glow)), dp);
+            delete dp;
+        }
+
+        void DrawPerson(Graphics^ g, float x, float y, int id)
+        {
+            array<Color>^ shirts = gcnew array<Color>
+            {
+                C_CIN, C_COF, C_IND, C_ARC, GOLD, C_ERN,
+                Color::FromArgb(220, 180, 255), Color::FromArgb(255, 200, 120)
+            };
+            Color shirt = shirts[id % shirts->Length];
+            float swing = (float)(Math::Sin(scene * 8 + id) * 7);
+
+            g->FillEllipse(gcnew SolidBrush(Color::FromArgb(255, 255, 224, 190)), x + 7, y - 34, 16.0f, 16.0f);
+
+            g->FillEllipse(gcnew SolidBrush(Color::FromArgb(255, 60, 40, 20)), x + 7, y - 34, 16.0f, 8.0f);
+
+            GraphicsPath^ bp = RR(RectangleF(x + 4, y - 18, 22.0f, 28.0f), 6.0f);
+            g->FillPath(gcnew SolidBrush(shirt), bp);
+            delete bp;
+
+            Pen^ limb = gcnew Pen(Color::FromArgb(200, shirt), 2.5f);
+            g->DrawLine(limb, x + 4, y - 14, x - 7, y - 2 + swing);
+            g->DrawLine(limb, x + 26, y - 14, x + 37, y - 2 - swing);
+
+            Pen^ leg = gcnew Pen(Color::FromArgb(255, 40, 45, 80), 3.0f);
+            g->DrawLine(leg, x + 10, y + 10, x + 4, y + 32 + swing * 0.5f);
+            g->DrawLine(leg, x + 20, y + 10, x + 28, y + 32 - swing * 0.5f);
+            delete limb;
+            delete leg;
+        }
+
+        void DrawCar(Graphics^ g, float x, float y, Color c, bool left)
+        {
+
+            g->FillEllipse(gcnew SolidBrush(Color::FromArgb(60, 0, 0, 0)), x + 8, y + 44, 108.0f, 10.0f);
+
+            GraphicsPath^ body = RR(RectangleF(x, y + 14, 124.0f, 38.0f), 16.0f);
+            LinearGradientBrush^ bb = gcnew LinearGradientBrush(RectangleF(x, y + 14, 124.0f, 38.0f),
+                ControlPaint::Light(c, 0.2f), c, 90.0f);
+
+            g->FillPath(bb, body);
+            delete bb;
+
+            g->DrawPath(gcnew Pen(Color::FromArgb(180, 255, 255, 255), 1.0f), body);
+            delete body;
+
+            GraphicsPath^ roof = RR(RectangleF(x + 28, y, 70.0f, 28.0f), 10.0f);
+            g->FillPath(gcnew SolidBrush(Color::FromArgb(200, 16, 18, 38)), roof);
+            g->DrawPath(gcnew Pen(Color::FromArgb(100, c), 1.5f), roof); delete roof;
+
+            g->FillRectangle(gcnew SolidBrush(Color::FromArgb(140, 180, 220, 255)), x + 32, y + 3, 28.0f, 20.0f);
+            g->FillRectangle(gcnew SolidBrush(Color::FromArgb(140, 180, 220, 255)), x + 64, y + 3, 28.0f, 20.0f);
+
+            for (int wi = 0; wi < 2; wi++)
+            {
+                float wx = x + 18 + wi * 80;
+                g->FillEllipse(gcnew SolidBrush(Color::FromArgb(255, 20, 22, 30)), wx, y + 40, 24.0f, 24.0f);
+                g->DrawEllipse(gcnew Pen(Color::FromArgb(200, c), 2.0f), wx, y + 40, 24.0f, 24.0f);
+                g->FillEllipse(gcnew SolidBrush(Color::FromArgb(200, c)), wx + 8, y + 48, 8.0f, 8.0f);
+            }
+
+            float hx = left ? x + 116 : x + 2, hr = 10.0f;
+            Color hc = left ? Color::FromArgb(255, 255, 255, 200) : Color::FromArgb(255, 255, 50, 50);
+            g->FillEllipse(gcnew SolidBrush(hc), hx, y + 24, hr, hr);
+
+            g->FillEllipse(gcnew SolidBrush(Color::FromArgb(55, hc)), hx - 6, y + 18, hr + 12, hr + 12);
+        }
+
+    protected:
+        virtual property System::Windows::Forms::CreateParams^ CreateParams
+        {
+            System::Windows::Forms::CreateParams ^ get() override
+            {
+                System::Windows::Forms::CreateParams^ cp = Form::CreateParams;
+
+                cp->ExStyle = cp->ExStyle | 0x02000000;
+
+                return cp;
+            }
+        }
+    };
+}
+
+[STAThreadAttribute]
+int main(array<System::String^>^ args)
+{
+    Application::EnableVisualStyles();
+    Application::SetCompatibleTextRenderingDefault(false);
+    Application::Run(gcnew RecreoHub3D::RecreoHubForm());
+    return 0;
+}
