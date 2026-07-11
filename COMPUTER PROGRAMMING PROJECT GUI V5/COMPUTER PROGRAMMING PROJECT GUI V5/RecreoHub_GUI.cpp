@@ -657,6 +657,7 @@ namespace RecreoHub3D
     private:
         SmoothPanel^ welcomePage, ^ dashboardPage, ^ explorePage, ^ cinemaPage, ^ coffeePage, ^ indoorPage, ^ arcadePage, ^ purchasesPage;
         Timer^ sceneTimer;
+        SmoothPanel^ currentPage;
         Random^ rnd;
         float scene;
         Image^ heroLogo;
@@ -811,6 +812,12 @@ namespace RecreoHub3D
             this->Controls->Add(dashboardPage);
             this->Controls->Add(explorePage);
             this->Controls->Add(welcomePage);
+
+            /*currentPage = welcomePage;
+            currentPage->Dock = DockStyle::Fill;
+            currentPage->Bounds = this->ClientRectangle;
+            currentPage->BringToFront();*/
+            currentPage = welcomePage;
         }
 
         SmoothPanel^ MakePage(bool vis)
@@ -846,25 +853,25 @@ namespace RecreoHub3D
             array<Color>^ pcA = gcnew array<Color>
             {
                 Color::FromArgb(245, 65, 88),
-                Color::FromArgb(45, 200, 180),
-                Color::FromArgb(255, 128, 45),
-                Color::FromArgb(155, 75, 245)
+                    Color::FromArgb(45, 200, 180),
+                    Color::FromArgb(255, 128, 45),
+                    Color::FromArgb(155, 75, 245)
             };
 
             array<Color>^ pcB = gcnew array<Color>
             {
                 Color::FromArgb(255, 105, 125),
-                Color::FromArgb(90, 235, 210),
-                Color::FromArgb(255, 175, 70),
-                Color::FromArgb(195, 105, 255)
+                    Color::FromArgb(90, 235, 210),
+                    Color::FromArgb(255, 175, 70),
+                    Color::FromArgb(195, 105, 255)
             };
 
             array<EventHandler^>^ actions = gcnew array<EventHandler^>
             {
                 gcnew EventHandler(this, &RecreoHubForm::ShowCinema),
-                gcnew EventHandler(this, &RecreoHubForm::ShowIndoor),
-                gcnew EventHandler(this, &RecreoHubForm::ShowCoffee),
-                gcnew EventHandler(this, &RecreoHubForm::ShowArcade)
+                    gcnew EventHandler(this, &RecreoHubForm::ShowIndoor),
+                    gcnew EventHandler(this, &RecreoHubForm::ShowCoffee),
+                    gcnew EventHandler(this, &RecreoHubForm::ShowArcade)
             };
 
             for (int i = 0; i < 4; i++)
@@ -1354,7 +1361,9 @@ namespace RecreoHub3D
             bk->Click += gcnew EventHandler(this, &RecreoHubForm::BookCinemaSeats);
             left->Controls->Add(bk);
 
-            GlowButton^ cl = Btn("Clear", 240, 278, 105, 46, GOLD, Color::FromArgb(15, 15, 30));
+            GlowButton^ cl = Btn("Clear", 240, 278, 105, 46, C_COF, Color::White);
+            cl->ColorA = Color::FromArgb(220, 103, 28);
+            cl->ColorB = C_COF;
             cl->Click += gcnew EventHandler(this, &RecreoHubForm::ClearSeatSelection);
             left->Controls->Add(cl);
             left->Controls->Add(SL("Receipt", 24, 340));
@@ -1426,15 +1435,21 @@ namespace RecreoHub3D
             cart->Controls->Add(sauceBox);
             cart->Controls->Add(cheeseBox);
 
-            GlowButton^ ae = Btn("Add Extras", 100, 326, 155, 44, C_COF, Color::White);
+            GlowButton^ ae = Btn("Add Extras", 100, 326, 155, 44, C_IND, Color::White);
+            ae->ColorA = Color::FromArgb(31, 166, 148);
+            ae->ColorB = C_IND;
+
             ae->Click += gcnew EventHandler(this, &RecreoHubForm::AddCoffeeExtras);
             cart->Controls->Add(ae);
 
-            GlowButton^ co = Btn("Checkout", 271, 326, 138, 44, C_IND, Color::White);
+            GlowButton^ co = Btn("Checkout", 271, 326, 138, 44, C_COF, Color::White);
+            co->ColorA = Color::FromArgb(220, 103, 28);
+            co->ColorB = C_COF;
             co->Click += gcnew EventHandler(this, &RecreoHubForm::CheckoutCoffee);
             cart->Controls->Add(co);
 
             GlowButton^ cc = Btn("Clear", 425, 326, 98, 44, C_CIN, Color::White);
+
             cc->Click += gcnew EventHandler(this, &RecreoHubForm::ClearCoffeeOrder);
             cart->Controls->Add(cc);
 
@@ -1455,28 +1470,32 @@ namespace RecreoHub3D
 
             indoorLoginBox = Glass(56, 145, 395, 435, GOLD);
             indoorGameBox = Glass(507, 145, 757, 435, C_IND);
+
             indoorLoginBox->Controls->Add(L("Member Login", 24, 22, 300, 32, 18, FontStyle::Bold, IVORY));
             indoorLoginBox->Controls->Add(SL("Username", 38, 68));
 
             memberUserBox = Inp(38, 90, 320);
             memberUserBox->Text = "member";
-
             indoorLoginBox->Controls->Add(memberUserBox);
+
             indoorLoginBox->Controls->Add(SL("Password", 38, 138));
+
             memberPassBox = Inp(38, 160, 320);
             memberPassBox->UseSystemPasswordChar = true;
             memberPassBox->Text = "password123";
             indoorLoginBox->Controls->Add(memberPassBox);
 
-            GlowButton^ lb = Btn("Unlock Games", 108, 220, 178, 46, GOLD, Color::FromArgb(15, 15, 30));
+            GlowButton^ lb = Btn("Unlock Games", 108, 220, 178, 46, GOLD, Color::White);
+            lb->ColorA = Color::FromArgb(190, 120, 0);
+            lb->ColorB = GOLD;
             lb->Click += gcnew EventHandler(this, &RecreoHubForm::ValidateMemberGUI);
-
             indoorLoginBox->Controls->Add(lb);
+
             indoorGameBox->Controls->Add(L("Game Arena", 24, 22, 300, 32, 18, FontStyle::Bold, IVORY));
 
-            GlowButton^ sn = Btn("Snooker", 123, 70, 155, 46, C_COF, Color::White);
-            sn->ColorA = C_COF;
-            sn->ColorB = ControlPaint::Light(C_COF, 0.20f);
+            GlowButton^ sn = Btn("Snooker", 123, 70, 155, 46, C_IND, Color::White);
+            sn->ColorA = Color::FromArgb(31, 166, 148);
+            sn->ColorB = C_IND;
 
             GlowButton^ tt = Btn("Table Tennis", 301, 70, 155, 46, C_ARC, Color::White);
             GlowButton^ sq = Btn("Squash", 479, 70, 155, 46, C_ERN, Color::White);
@@ -1488,6 +1507,7 @@ namespace RecreoHub3D
             indoorGameBox->Controls->Add(sn);
             indoorGameBox->Controls->Add(tt);
             indoorGameBox->Controls->Add(sq);
+
             indoorOutput = TA(44, 140, 669, 245);
             indoorOutput->Text = "Login first to access indoor games.";
             indoorGameBox->Controls->Add(indoorOutput);
@@ -1537,7 +1557,9 @@ namespace RecreoHub3D
             adminPassBox->Text = "1234";
 
             lc->Controls->Add(adminPassBox);
-            GlowButton^ vb = Btn("View Earnings", 108, 220, 178, 46, GOLD, Color::FromArgb(15, 15, 30));
+            GlowButton^ vb = Btn("View Earnings", 108, 220, 178, 46, GOLD, Color::White);
+            vb->ColorA = Color::FromArgb(190, 120, 0);
+            vb->ColorB = GOLD;
 
             vb->Click += gcnew EventHandler(this, &RecreoHubForm::ViewEarningsGUI);
             lc->Controls->Add(vb);
@@ -1756,34 +1778,60 @@ namespace RecreoHub3D
             return t;
         }
 
-        void ShowOnly(SmoothPanel^ page)
+        /*void ShowOnly(SmoothPanel^ page)
         {
-            array<SmoothPanel^>^ all = gcnew array<SmoothPanel^>
+            if (page == nullptr || page == currentPage)
             {
-                welcomePage,
-                dashboardPage,
-                explorePage,
-                cinemaPage,
-                coffeePage,
-                indoorPage,
-                arcadePage,
-                purchasesPage
-            };
-
-            for each(SmoothPanel ^ p in all)
-            {
-                p->Visible = false;
+                return;
             }
 
+            bool timerWasRunning = sceneTimer != nullptr && sceneTimer->Enabled;
+
+            if (timerWasRunning)
+            {
+                sceneTimer->Stop();
+            }
+
+            if (currentPage != nullptr)
+            {
+                currentPage->Visible = false;
+            }
+
+            currentPage = page;
+            currentPage->Dock = DockStyle::Fill;
+            currentPage->Bounds = this->ClientRectangle;
+            currentPage->Visible = true;
+            currentPage->BringToFront();
+            currentPage->Invalidate(false);
+
+            if (timerWasRunning)
+            {
+                sceneTimer->Start();
+            }
+        }*/
+
+        void ShowOnly(SmoothPanel^ page)
+        {
+            // Do nothing if the requested page is invalid
+            // or is already the currently displayed page.
+            if (page == nullptr || page == currentPage)
+            {
+                return;
+            }
+
+            // Hide only the page that is currently open.
+            // Do not loop through every page.
+            if (currentPage != nullptr)
+            {
+                currentPage->Visible = false;
+            }
+
+            // Show the selected page.
             page->Visible = true;
             page->BringToFront();
 
-            page->Invalidate();
-
-            for each(Control ^ c in page->Controls)
-            {
-                c->Invalidate();
-            }
+            // Remember it for the next switch.
+            currentPage = page;
         }
 
         void ShowWelcome(Object^, EventArgs^)
@@ -1862,14 +1910,14 @@ namespace RecreoHub3D
         {
             movieBox->Items->Clear();
             String^ sel = genreBox->SelectedItem->ToString();
-            for each(MovieItem ^ m in movies) if (m->Genre == sel) movieBox->Items->Add(m);
+            for each (MovieItem ^ m in movies) if (m->Genre == sel) movieBox->Items->Add(m);
             if (movieBox->Items->Count > 0) movieBox->SelectedIndex = 0;
         }
 
         int CountSel()
         {
             int c = 0;
-            for each(bool b in seatSelected) if (b) c++;
+            for each (bool b in seatSelected) if (b) c++;
             return c;
         }
 
@@ -1937,7 +1985,7 @@ namespace RecreoHub3D
             productGrid->Controls->Clear();
             String^ cat = coffeeCategoryBox->SelectedItem->ToString();
 
-            for each(ProductItem ^ p in products) if (p->Category == cat)
+            for each (ProductItem ^ p in products) if (p->Category == cat)
             {
                 GlowButton^ b = Btn(String::Format("{0}\r\nRs {1}", p->Name, p->Price), 0, 0, 205, 64, C_ARC, Color::White);
                 b->ColorA = Color::FromArgb(124, 58, 237);
@@ -2013,7 +2061,7 @@ namespace RecreoHub3D
 
         void SetGameBtns(bool en)
         {
-            for each(Control ^ c in indoorGameBox->Controls)
+            for each (Control ^ c in indoorGameBox->Controls)
             {
                 GlowButton^ b = dynamic_cast<GlowButton^>(c);
                 if (b)
@@ -2099,9 +2147,13 @@ namespace RecreoHub3D
 
             hangInput = Inp(73, 188, 78);
 
-            GlowButton^ g = Btn("Guess", 167, 182, 115, 40, C_ARC, Color::White);
+            GlowButton^ g = Btn("Guess", 167, 182, 115, 40, C_ERN, Color::White);
+            g->ColorA = Color::FromArgb(37, 99, 235);
+            g->ColorB = Color::FromArgb(59, 130, 246);
 
-            GlowButton^ n = Btn("New Game", 92, 244, 170, 42, GOLD, Color::FromArgb(15, 15, 30));
+            GlowButton^ n = Btn("New Game", 92, 244, 170, 42, C_ARC, Color::White);
+            n->ColorA = Color::FromArgb(126, 48, 210);
+            n->ColorB = C_ARC;
 
             g->Click += gcnew EventHandler(this, &RecreoHubForm::GuessHangman);
             n->Click += gcnew EventHandler(this, &RecreoHubForm::NewHangman);
@@ -2125,7 +2177,7 @@ namespace RecreoHub3D
             hangGuessed = gcnew array<bool>
                 (
                     hangWord->Length
-                );
+                    );
             hangAttempts = 6;
             hangStatus->Text = "Attempts left: 6";
             hangInput->Clear();
@@ -2189,9 +2241,13 @@ namespace RecreoHub3D
 
             numberInput = Inp(55, 153, 110);
 
-            GlowButton^ g = Btn("Guess", 181, 148, 120, 40, C_COF, Color::White);
+            GlowButton^ g = Btn("Guess", 181, 148, 120, 40, C_CIN, Color::White);
+            g->ColorA = Color::FromArgb(210, 52, 78);
+            g->ColorB = C_CIN;
 
-            GlowButton^ n = Btn("New Number", 92, 218, 170, 42, GOLD, Color::FromArgb(15, 15, 30));
+            GlowButton^ n = Btn("New Number", 92, 218, 170, 42, C_COF, Color::White);
+            n->ColorA = Color::FromArgb(220, 103, 28);
+            n->ColorB = C_COF;
 
             g->Click += gcnew EventHandler(this, &RecreoHubForm::GuessNumber);
             n->Click += gcnew EventHandler(this, &RecreoHubForm::NewNumber);
@@ -2259,7 +2315,9 @@ namespace RecreoHub3D
                 tttButtons[i] = b;
                 box->Controls->Add(b);
             }
-            GlowButton^ r = Btn("Restart", 88, 330, 180, 42, GOLD, Color::FromArgb(15, 15, 30));
+            GlowButton^ r = Btn("Restart", 92, 330, 170, 42, C_IND, Color::White);
+            r->ColorA = Color::FromArgb(31, 166, 148);
+            r->ColorB = C_IND;
             r->Click += gcnew EventHandler(this, &RecreoHubForm::RestartTic);
             box->Controls->Add(tttStatus);
             box->Controls->Add(r);
@@ -2302,7 +2360,7 @@ namespace RecreoHub3D
             {
                 tttStatus->Text = String::Format("Player {0} Wins!", w);
                 tttStatus->ForeColor = GOLD;
-                for each(GlowButton ^ bt in tttButtons)bt->Enabled = false;
+                for each (GlowButton ^ bt in tttButtons)bt->Enabled = false;
             }
             else if (TicFull())
             {
@@ -2329,7 +2387,7 @@ namespace RecreoHub3D
 
         bool TicFull()
         {
-            for each(Char c in tttBoard) if (c == ' ')return false;
+            for each (Char c in tttBoard) if (c == ' ')return false;
             return true;
         }
 
@@ -2352,7 +2410,7 @@ namespace RecreoHub3D
         {
             double t = 0;
             if (!File::Exists(f))return 0;
-            for each(String ^ l in File::ReadAllLines(f))
+            for each (String ^ l in File::ReadAllLines(f))
             {
                 double v = 0;
                 if (Double::TryParse(l, NumberStyles::Any, CultureInfo::InvariantCulture, v))t += v;
@@ -2360,32 +2418,26 @@ namespace RecreoHub3D
             return t;
         }
 
-        void OnTick(Object^, EventArgs^)
+        /*void OnTick(Object^, EventArgs^)
         {
-
             scene += 0.014f;
 
-            array<SmoothPanel^>^ allPages = gcnew array<SmoothPanel^>
+            if (currentPage != nullptr && currentPage->Visible)
             {
-                welcomePage,
-                dashboardPage,
-                explorePage,
-                cinemaPage,
-                coffeePage,
-                indoorPage,
-                arcadePage,
-                purchasesPage
-            };
+                currentPage->Invalidate(false);
+            }
+        }*/
 
-            for each(SmoothPanel ^ page in allPages)
+        void OnTick(Object^, EventArgs^)
+        {
+            scene += 0.014f;
+
+            // Animate only the currently visible page.
+            // False prevents all child controls from being
+            // unnecessarily invalidated every frame.
+            if (currentPage != nullptr && currentPage->Visible)
             {
-                if (page != nullptr && page->Visible)
-                {
-
-                    page->Invalidate();
-
-                    break;
-                }
+                currentPage->Invalidate(false);
             }
         }
 
@@ -2421,39 +2473,39 @@ namespace RecreoHub3D
             array<float>^ ox = gcnew array<float>
             {
                 0.10f, 0.85f, 0.45f, 0.20f, 0.75f,
-                0.55f, 0.30f, 0.65f, 0.90f, 0.15f
+                    0.55f, 0.30f, 0.65f, 0.90f, 0.15f
             };
 
             array<float>^ oy = gcnew array<float>
             {
                 0.15f, 0.80f, 0.50f, 0.75f, 0.25f,
-                0.60f, 0.40f, 0.10f, 0.65f, 0.55f
+                    0.60f, 0.40f, 0.10f, 0.65f, 0.55f
             };
 
             array<float>^ rx = gcnew array<float>
             {
                 260.0f, 220.0f, 310.0f, 180.0f, 240.0f,
-                290.0f, 200.0f, 270.0f, 200.0f, 230.0f
+                    290.0f, 200.0f, 270.0f, 200.0f, 230.0f
             };
 
             array<float>^ ry = gcnew array<float>
             {
                 220.0f, 260.0f, 200.0f, 300.0f, 240.0f,
-                180.0f, 280.0f, 200.0f, 260.0f, 310.0f
+                    180.0f, 280.0f, 200.0f, 260.0f, 310.0f
             };
 
             array<Color>^ orbColors = gcnew array<Color>
             {
                 Color::FromArgb(255, 0, 110),
-                Color::FromArgb(131, 56, 236),
-                Color::FromArgb(58, 134, 255),
-                Color::FromArgb(6, 255, 180),
-                Color::FromArgb(255, 183, 0),
-                Color::FromArgb(255, 77, 109),
-                Color::FromArgb(0, 245, 212),
-                Color::FromArgb(247, 37, 133),
-                Color::FromArgb(114, 9, 183),
-                Color::FromArgb(0, 180, 90)
+                    Color::FromArgb(131, 56, 236),
+                    Color::FromArgb(58, 134, 255),
+                    Color::FromArgb(6, 255, 180),
+                    Color::FromArgb(255, 183, 0),
+                    Color::FromArgb(255, 77, 109),
+                    Color::FromArgb(0, 245, 212),
+                    Color::FromArgb(247, 37, 133),
+                    Color::FromArgb(114, 9, 183),
+                    Color::FromArgb(0, 180, 90)
             };
 
             for (int i = 0; i < 10; i++)
@@ -2469,16 +2521,21 @@ namespace RecreoHub3D
                 {
                     float scale = (float)k;
 
+                    SolidBrush^ orbBrush = gcnew SolidBrush(Color::FromArgb(18 / k, orbColors[i]));
                     g->FillEllipse
                     (
-                        gcnew SolidBrush(Color::FromArgb(18 / k, orbColors[i])),
+                        orbBrush,
                         cx - rx[i] * scale * 0.55f,
                         cy - ry[i] * scale * 0.55f,
                         rx[i] * scale * 1.1f,
                         ry[i] * scale * 1.1f
                     );
+                    delete orbBrush;
                 }
             }
+
+            int starAlpha = isHeroPage ? 160 : 105;
+            SolidBrush^ starBrush = gcnew SolidBrush(Color::FromArgb(starAlpha, 255, 255, 255));
 
             for (int i = 0; i < 70; i++)
             {
@@ -2486,17 +2543,17 @@ namespace RecreoHub3D
                 float py = (float)((i * 89 + (int)(scene * 40 * ((i % 4) + 1))) % Math::Max(1, h));
                 float size = (float)(1 + (i % 3));
 
-                int alpha = isHeroPage ? 160 : 105;
-
                 g->FillEllipse
                 (
-                    gcnew SolidBrush(Color::FromArgb(alpha, 255, 255, 255)),
+                    starBrush,
                     px,
                     py,
                     size,
                     size
                 );
             }
+
+            delete starBrush;
 
             RectangleF bottomFade = RectangleF(0.0f, (float)(h - 190), (float)w, 190.0f);
 
@@ -2517,29 +2574,26 @@ namespace RecreoHub3D
             PaintBubbleBackground(g, w, h, false);
 
             int headerHeight = 85;
-
             int goldThickness = 1;
 
-            g->FillRectangle
-            (
-                gcnew SolidBrush(Color::FromArgb(120, 7, 7, 21)),
-                Rectangle(0, 0, w, headerHeight)
-            );
+            SolidBrush^ headerBrush = gcnew SolidBrush(Color::FromArgb(120, 7, 7, 21));
+            g->FillRectangle(headerBrush, Rectangle(0, 0, w, headerHeight));
+            delete headerBrush;
 
-            g->FillRectangle
-            (
-                gcnew SolidBrush(GOLD),
-                Rectangle(0, headerHeight - goldThickness, w, goldThickness)
-            );
+            SolidBrush^ goldBrush = gcnew SolidBrush(GOLD);
+            g->FillRectangle(goldBrush, Rectangle(0, headerHeight - goldThickness, w, goldThickness));
+            delete goldBrush;
 
+            Pen^ headerLinePen = gcnew Pen(Color::FromArgb(60, GOLD), 1.0f);
             g->DrawLine
             (
-                gcnew Pen(Color::FromArgb(60, GOLD), 1.0f),
+                headerLinePen,
                 0.0f,
                 (float)headerHeight,
                 (float)w,
                 (float)headerHeight
             );
+            delete headerLinePen;
         }
 
         GraphicsPath^ RR(RectangleF r, float rad)
@@ -2561,12 +2615,12 @@ namespace RecreoHub3D
             array<String^>^ logoFiles = gcnew array<String^>
             {
                 "recreohub_logo.gif",
-                "recreohub_logo.png",
-                "recreohub_logo.jpg",
-                "recreohub_logo.jpeg"
+                    "recreohub_logo.png",
+                    "recreohub_logo.jpg",
+                    "recreohub_logo.jpeg"
             };
 
-            for each(String ^ fileName in logoFiles)
+            for each (String ^ fileName in logoFiles)
             {
                 if (File::Exists(fileName))
                 {
@@ -2793,8 +2847,9 @@ namespace RecreoHub3D
                 float brightness = (float)(0.4 + 0.6 * Math::Abs(Math::Sin(scene * 0.8 + i * 0.3)));
                 int alpha = (int)(brightness * (i % 3 == 0 ? 200 : i % 3 == 1 ? 140 : 90));
                 float sz = (float)(i % 3 == 0 ? 2.8f : i % 3 == 1 ? 1.8f : 1.0f);
-                g->FillEllipse(gcnew SolidBrush(Color::FromArgb(alpha, 220, 230, 255)),
-                    (float)sx, (float)sy, sz, sz);
+                SolidBrush^ starBrush = gcnew SolidBrush(Color::FromArgb(alpha, 220, 230, 255));
+                g->FillEllipse(starBrush, (float)sx, (float)sy, sz, sz);
+                delete starBrush;
             }
 
             int cx = w / 2; int cy = h - 200;
@@ -2823,62 +2878,192 @@ namespace RecreoHub3D
             }
             delete gpen;
 
-            DrawBuilding(g, 530, h - 455, 145, 255, C_CIN, "CINEMA");
-            DrawBuilding(g, 715, h - 490, 150, 290, C_IND, "INDOOR");
-            DrawBuilding(g, 905, h - 515, 155, 315, C_COF, "CAFE");
-            DrawBuilding(g, 1100, h - 455, 145, 255, C_ARC, "ARCADE");
+            // Move all buildings 35 pixels upward while keeping their bottoms aligned.
+            DrawBuilding(g, 530, h - 490, 145, 255, C_CIN, "CINEMA");
+            DrawBuilding(g, 715, h - 525, 150, 290, C_IND, "INDOOR");
+            DrawBuilding(g, 905, h - 550, 155, 315, C_COF, "CAFE");
+            DrawBuilding(g, 1100, h - 490, 145, 255, C_ARC, "ARCADE");
 
-            Rectangle road = Rectangle(0, h - 145, w, 145);
-            LinearGradientBrush^ rb = gcnew LinearGradientBrush(road,
-                Color::FromArgb(255, 18, 20, 32), Color::FromArgb(255, 10, 11, 22), 90.0f);
+            const int roadHeight = 180;
+            const int walkwayHeight = 36;
+            int roadTop = h - roadHeight;
+            int walkwayBottom = roadTop + walkwayHeight;
+            int laneDividerY = walkwayBottom + (roadHeight - walkwayHeight) / 2;
+
+            Rectangle road = Rectangle(0, roadTop, w, roadHeight);
+            LinearGradientBrush^ rb = gcnew LinearGradientBrush
+            (
+                road,
+                Color::FromArgb(255, 18, 20, 32),
+                Color::FromArgb(255, 10, 11, 22),
+                90.0f
+            );
             g->FillRectangle(rb, road);
             delete rb;
 
-            g->FillRectangle(gcnew SolidBrush(Color::FromArgb(255, 22, 26, 44)), Rectangle(0, h - 145, w, 36));
-            g->DrawLine(gcnew Pen(Color::FromArgb(100, 62, 207, 178), 2.0f), 0.0f, (float)(h - 145), (float)w, (float)(h - 145));
-            g->DrawLine(gcnew Pen(Color::FromArgb(80, 255, 255, 255), 1.5f), 0.0f, (float)(h - 109), (float)w, (float)(h - 109));
+            // Previous footpath design:
+// dark base with identical light pavement blocks and dark gaps.
+            SolidBrush^ footpathBrush = gcnew SolidBrush
+            (
+                Color::FromArgb(255, 22, 26, 44)
+            );
 
-            Pen^ lane = gcnew Pen(Color::FromArgb(160, 240, 165, 0), 4.0f);
-            lane->DashStyle = DashStyle::Dash; lane->DashPattern = gcnew array<float>
+            g->FillRectangle
+            (
+                footpathBrush,
+                Rectangle(0, roadTop, w, walkwayHeight)
+            );
+
+            delete footpathBrush;
+
+
+            // Teal line along the upper edge of the footpath.
+            Pen^ footpathTopPen = gcnew Pen
+            (
+                Color::FromArgb(100, 62, 207, 178),
+                2.0f
+            );
+
+            g->DrawLine
+            (
+                footpathTopPen,
+                0.0f,
+                (float)roadTop,
+                (float)w,
+                (float)roadTop
+            );
+
+            delete footpathTopPen;
+
+
+            // Soft white curb line between the footpath and road.
+            Pen^ footpathBottomPen = gcnew Pen
+            (
+                Color::FromArgb(80, 255, 255, 255),
+                1.5f
+            );
+
+            g->DrawLine
+            (
+                footpathBottomPen,
+                0.0f,
+                (float)walkwayBottom,
+                (float)w,
+                (float)walkwayBottom
+            );
+
+            delete footpathBottomPen;
+
+
+            // Road centre divider remains unchanged.
+            Pen^ lane = gcnew Pen
+            (
+                Color::FromArgb(175, GOLD),
+                4.0f
+            );
+
+            lane->DashStyle = DashStyle::Dash;
+            lane->DashPattern = gcnew array<float>
             {
-                14, 10
+                14.0f,
+                    10.0f
             };
-            g->DrawLine(lane, 0.0f, (float)(h - 72), (float)w, (float)(h - 72));
+
+            g->DrawLine
+            (
+                lane,
+                0.0f,
+                (float)laneDividerY,
+                (float)w,
+                (float)laneDividerY
+            );
+
             delete lane;
+
+
+            // Previous repeating pavement-block appearance.
+            // Every block uses the same light colour.
+            // The uncovered dark base creates the gaps.
+            SolidBrush^ pavementBlockBrush = gcnew SolidBrush
+            (
+                Color::FromArgb(130, 240, 245, 255)
+            );
 
             for (int zi = 0; zi < 40; zi++)
             {
-                int zx = zi * 40;
-                g->FillRectangle(gcnew SolidBrush(Color::FromArgb(130, 240, 245, 255)), zx, h - 145, 24, 36);
+                int blockX = zi * 40;
+
+                g->FillRectangle
+                (
+                    pavementBlockBrush,
+                    blockX,
+                    roadTop,
+                    24,
+                    walkwayHeight
+                );
             }
 
+            delete pavementBlockBrush;
+
+
+            // Keep people correctly positioned on the restored footpath.
             for (int i = 0; i < 8; i++)
             {
-                float px = (float)((i * 168 + (int)(scene * 60)) % (w + 80) - 40);
-                float py = (float)(h - 144 + Math::Sin(scene * 3 + i) * 4);
-                DrawPerson(g, px, py, i);
+                float personX = (float)
+                    (
+                        (i * 168 + (int)(scene * 60))
+                        % (w + 80) - 40
+                        );
+
+                float personY = (float)
+                    (
+                        roadTop + 1 +
+                        Math::Sin(scene * 3 + i) * 3
+                        );
+
+                DrawPerson
+                (
+                    g,
+                    personX,
+                    personY,
+                    i
+                );
             }
 
-            array<Color>^ carC = gcnew array<Color>
+            array<Color>^ carColors = gcnew array<Color>
             {
-                C_CIN, GOLD, C_IND, C_ARC
+                C_CIN, C_IND, GOLD, C_ARC, C_COF, C_ERN
             };
 
-            for (int i = 0; i < 4; i++)
+            int travelWidth = w + 180;
+            int spacing = travelWidth / 3;
+
+            // Upper road lane: three cars travel from left to right.
+            for (int i = 0; i < 3; i++)
             {
-                float cx2 = (float)((i * 330 + (int)(scene * 68)) % (w + 140) - 140);
-                float cy2 = (float)(h - 100 + (i % 2) * 26);
-                DrawCar(g, cx2, cy2, carC[i], i % 2 == 0);
+                float carX = (float)((i * spacing + (int)(scene * 70.0f)) % travelWidth - 140);
+                float carY = (float)(walkwayBottom + 4);
+                DrawCar(g, carX, carY, carColors[i], true);
             }
 
-            for each(Particle ^ p in particles)
+            // Lower road lane: three differently coloured cars travel right to left.
+            for (int i = 0; i < 3; i++)
+            {
+                int phase = (i * spacing + 150 + (int)(scene * 64.0f)) % travelWidth;
+                float carX = (float)(w - phase);
+                float carY = (float)(laneDividerY + 4);
+                DrawCar(g, carX, carY, carColors[i + 3], false);
+            }
+
+            for each (Particle ^ p in particles)
             {
                 float alpha = (float)(0.4 + 0.5 * Math::Sin(scene + p->phase));
                 int a = (int)(alpha * 180);
 
                 a = Math::Max(0, Math::Min(255, a));
-                g->FillEllipse(gcnew SolidBrush(Color::FromArgb(a, p->col)),
-                    p->x, p->y, p->size, p->size);
+                SolidBrush^ particleBrush = gcnew SolidBrush(Color::FromArgb(a, p->col));
+                g->FillEllipse(particleBrush, p->x, p->y, p->size, p->size);
+                delete particleBrush;
 
             }
 
@@ -2924,7 +3109,7 @@ namespace RecreoHub3D
             int spread = 220;
             array<PointF>^ pts = gcnew array<PointF>
             {
-                    PointF((float)tx, (float)ty),
+                PointF((float)tx, (float)ty),
                     PointF((float)(bx - spread), (float)by),
                     PointF((float)(bx + spread), (float)by)
             };
@@ -2944,61 +3129,150 @@ namespace RecreoHub3D
             int depth = 22;
             array<Point>^ side = gcnew array<Point>
             {
-                    Point(bx + bw, by + 14), Point(bx + bw + depth, by),
-                    Point(bx + bw + depth, by + bh + depth), Point(bx + bw, by + bh)
+                Point(bx + bw, by + 14),
+                    Point(bx + bw + depth, by),
+                    Point(bx + bw + depth, by + bh + depth),
+                    Point(bx + bw, by + bh)
             };
 
-            g->FillPolygon(gcnew SolidBrush(Color::FromArgb(100, Math::Max(0, glow.R / 4), Math::Max(0, glow.G / 4), Math::Max(0, glow.B / 4))), side);
-            g->DrawPolygon(gcnew Pen(Color::FromArgb(60, glow), 1.0f), side);
+            SolidBrush^ sideBrush = gcnew SolidBrush
+            (
+                Color::FromArgb
+                (
+                    100,
+                    Math::Max(0, glow.R / 4),
+                    Math::Max(0, glow.G / 4),
+                    Math::Max(0, glow.B / 4)
+                )
+            );
+            g->FillPolygon(sideBrush, side);
+            delete sideBrush;
+
+            Pen^ sidePen = gcnew Pen(Color::FromArgb(60, glow), 1.0f);
+            g->DrawPolygon(sidePen, side);
+            delete sidePen;
 
             RectangleF facade = RectangleF((float)bx, (float)by, (float)bw, (float)bh);
-            LinearGradientBrush^ fb = gcnew LinearGradientBrush(facade,
-                Color::FromArgb(240, Math::Min(255, glow.R / 3 + 18), Math::Min(255, glow.G / 3 + 18), Math::Min(255, glow.B / 3 + 18)),
-                Color::FromArgb(240, 10, 10, 22), 90.0f);
-            g->FillRectangle(fb, facade);
-            delete fb;
+            LinearGradientBrush^ facadeBrush = gcnew LinearGradientBrush
+            (
+                facade,
+                Color::FromArgb
+                (
+                    240,
+                    Math::Min(255, glow.R / 3 + 18),
+                    Math::Min(255, glow.G / 3 + 18),
+                    Math::Min(255, glow.B / 3 + 18)
+                ),
+                Color::FromArgb(240, 10, 10, 22),
+                90.0f
+            );
+            g->FillRectangle(facadeBrush, facade);
+            delete facadeBrush;
 
-            Pen^ gp = gcnew Pen(Color::FromArgb(170, glow), 2.0f);
-            g->DrawRectangle(gp, (float)bx, (float)by, (float)bw, (float)bh);
-            delete gp;
+            Pen^ facadePen = gcnew Pen(Color::FromArgb(170, glow), 2.0f);
+            g->DrawRectangle(facadePen, (float)bx, (float)by, (float)bw, (float)bh);
+            delete facadePen;
 
-            g->DrawRectangle(gcnew Pen(Color::FromArgb(50, glow), 8.0f), (float)bx - 4, (float)by - 4, (float)bw + 8, (float)bh + 8);
+            Pen^ glowPen = gcnew Pen(Color::FromArgb(50, glow), 8.0f);
+            g->DrawRectangle(glowPen, (float)bx - 4, (float)by - 4, (float)bw + 8, (float)bh + 8);
+            delete glowPen;
 
             array<Point>^ roof = gcnew array<Point>
             {
-                Point(bx - 8, by), Point(bx + bw / 2, by - 40), Point(bx + bw + 8, by)
+                Point(bx - 8, by),
+                    Point(bx + bw / 2, by - 40),
+                    Point(bx + bw + 8, by)
             };
 
-            g->FillPolygon(gcnew SolidBrush(Color::FromArgb(200, glow.R / 4, glow.G / 4, glow.B / 4)), roof);
-            g->DrawPolygon(gcnew Pen(Color::FromArgb(160, glow), 1.5f), roof);
+            SolidBrush^ roofBrush = gcnew SolidBrush
+            (
+                Color::FromArgb(200, glow.R / 4, glow.G / 4, glow.B / 4)
+            );
+            g->FillPolygon(roofBrush, roof);
+            delete roofBrush;
 
-            int cols = 4, rows = 6;
-            int ww = (bw - 20) / cols, wh = (bh - 60) / rows;
+            Pen^ roofPen = gcnew Pen(Color::FromArgb(160, glow), 1.5f);
+            g->DrawPolygon(roofPen, roof);
+            delete roofPen;
 
-            for (int r = 0; r < rows; r++) for (int c = 0; c < cols; c++)
+            int cols = 4;
+            int rows = 6;
+            int windowWidth = (bw - 20) / cols;
+            int windowHeight = (bh - 60) / rows;
+
+            for (int row = 0; row < rows; row++)
             {
-                int wx = bx + 10 + c * (ww + 3), wy = by + 20 + r * (wh + 3);
-                bool lit = ((r * cols + c + bx) % 3 != 0);
-                float pulse = (float)(lit ? 0.6 + 0.4 * Math::Sin(scene * 2 + r * 0.7 + c * 0.5) : 0.08);
-                Color wc = Color::FromArgb((int)(pulse * 200),
-                    Math::Min(255, (int)(glow.R * 0.9 + 80)),
-                    Math::Min(255, (int)(glow.G * 0.9 + 80)),
-                    Math::Min(255, (int)(glow.B * 0.9 + 80)));
-                g->FillRectangle(gcnew SolidBrush(wc), (float)wx, (float)wy, (float)(ww - 2), (float)(wh - 2));
+                for (int col = 0; col < cols; col++)
+                {
+                    int windowX = bx + 10 + col * (windowWidth + 3);
+                    int windowY = by + 20 + row * (windowHeight + 3);
+                    bool lit = ((row * cols + col + bx) % 3 != 0);
+
+                    float pulse = (float)
+                        (
+                            lit
+                            ? 0.6 + 0.4 * Math::Sin(scene * 2 + row * 0.7 + col * 0.5)
+                            : 0.08
+                            );
+
+                    Color windowColor = Color::FromArgb
+                    (
+                        (int)(pulse * 200),
+                        Math::Min(255, (int)(glow.R * 0.9 + 80)),
+                        Math::Min(255, (int)(glow.G * 0.9 + 80)),
+                        Math::Min(255, (int)(glow.B * 0.9 + 80))
+                    );
+
+                    SolidBrush^ windowBrush = gcnew SolidBrush(windowColor);
+                    g->FillRectangle
+                    (
+                        windowBrush,
+                        (float)windowX,
+                        (float)windowY,
+                        (float)(windowWidth - 2),
+                        (float)(windowHeight - 2)
+                    );
+                    delete windowBrush;
+                }
             }
 
-            RectangleF sign = RectangleF((float)(bx + bw / 2 - 50), (float)(by + bh - 55), 100.0f, 28.0f);
-            GraphicsPath^ sp = RR(sign, 8.0f);
-            g->FillPath(gcnew SolidBrush(Color::FromArgb(200, glow)), sp);
-            TextRenderer::DrawText(g, name, gcnew Drawing::Font("Segoe UI", 8, FontStyle::Bold),
-                Rectangle((int)sign.X, (int)sign.Y, (int)sign.Width, (int)sign.Height),
-                Color::White, TextFormatFlags::HorizontalCenter | TextFormatFlags::VerticalCenter);
-            delete sp;
+            RectangleF sign = RectangleF
+            (
+                (float)(bx + bw / 2 - 50),
+                (float)(by + bh - 55),
+                100.0f,
+                28.0f
+            );
 
-            int dx = bx + bw / 2 - 14, dy = by + bh - 36;
-            GraphicsPath^ dp = RR(RectangleF((float)dx, (float)dy, 28.0f, 36.0f), 6.0f);
-            g->FillPath(gcnew SolidBrush(Color::FromArgb(180, glow)), dp);
-            delete dp;
+            GraphicsPath^ signPath = RR(sign, 8.0f);
+            SolidBrush^ signBrush = gcnew SolidBrush(Color::FromArgb(200, glow));
+            g->FillPath(signBrush, signPath);
+            delete signBrush;
+
+            Drawing::Font^ signFont = gcnew Drawing::Font("Segoe UI", 8, FontStyle::Bold);
+            TextRenderer::DrawText
+            (
+                g,
+                name,
+                signFont,
+                Rectangle((int)sign.X, (int)sign.Y, (int)sign.Width, (int)sign.Height),
+                Color::White,
+                TextFormatFlags::HorizontalCenter | TextFormatFlags::VerticalCenter
+            );
+            delete signFont;
+            delete signPath;
+
+            int doorX = bx + bw / 2 - 14;
+            int doorY = by + bh - 36;
+            GraphicsPath^ doorPath = RR
+            (
+                RectangleF((float)doorX, (float)doorY, 28.0f, 36.0f),
+                6.0f
+            );
+            SolidBrush^ doorBrush = gcnew SolidBrush(Color::FromArgb(180, glow));
+            g->FillPath(doorBrush, doorPath);
+            delete doorBrush;
+            delete doorPath;
         }
 
         void DrawPerson(Graphics^ g, float x, float y, int id)
@@ -3006,79 +3280,128 @@ namespace RecreoHub3D
             array<Color>^ shirts = gcnew array<Color>
             {
                 C_CIN, C_COF, C_IND, C_ARC, GOLD, C_ERN,
-                Color::FromArgb(220, 180, 255), Color::FromArgb(255, 200, 120)
+                    Color::FromArgb(220, 180, 255),
+                    Color::FromArgb(255, 200, 120)
             };
+
             Color shirt = shirts[id % shirts->Length];
             float swing = (float)(Math::Sin(scene * 8 + id) * 7);
 
-            g->FillEllipse(gcnew SolidBrush(Color::FromArgb(255, 255, 224, 190)), x + 7, y - 34, 16.0f, 16.0f);
+            SolidBrush^ skinBrush = gcnew SolidBrush(Color::FromArgb(255, 255, 224, 190));
+            g->FillEllipse(skinBrush, x + 7, y - 34, 16.0f, 16.0f);
+            delete skinBrush;
 
-            g->FillEllipse(gcnew SolidBrush(Color::FromArgb(255, 60, 40, 20)), x + 7, y - 34, 16.0f, 8.0f);
+            SolidBrush^ hairBrush = gcnew SolidBrush(Color::FromArgb(255, 60, 40, 20));
+            g->FillEllipse(hairBrush, x + 7, y - 34, 16.0f, 8.0f);
+            delete hairBrush;
 
-            GraphicsPath^ bp = RR(RectangleF(x + 4, y - 18, 22.0f, 28.0f), 6.0f);
-            g->FillPath(gcnew SolidBrush(shirt), bp);
-            delete bp;
+            GraphicsPath^ bodyPath = RR(RectangleF(x + 4, y - 18, 22.0f, 28.0f), 6.0f);
+            SolidBrush^ shirtBrush = gcnew SolidBrush(shirt);
+            g->FillPath(shirtBrush, bodyPath);
+            delete shirtBrush;
+            delete bodyPath;
 
-            Pen^ limb = gcnew Pen(Color::FromArgb(200, shirt), 2.5f);
-            g->DrawLine(limb, x + 4, y - 14, x - 7, y - 2 + swing);
-            g->DrawLine(limb, x + 26, y - 14, x + 37, y - 2 - swing);
+            Pen^ armPen = gcnew Pen(Color::FromArgb(200, shirt), 2.5f);
+            g->DrawLine(armPen, x + 4, y - 14, x - 7, y - 2 + swing);
+            g->DrawLine(armPen, x + 26, y - 14, x + 37, y - 2 - swing);
+            delete armPen;
 
-            Pen^ leg = gcnew Pen(Color::FromArgb(255, 40, 45, 80), 3.0f);
-            g->DrawLine(leg, x + 10, y + 10, x + 4, y + 32 + swing * 0.5f);
-            g->DrawLine(leg, x + 20, y + 10, x + 28, y + 32 - swing * 0.5f);
-            delete limb;
-            delete leg;
+            Pen^ legPen = gcnew Pen(Color::FromArgb(255, 40, 45, 80), 3.0f);
+            g->DrawLine(legPen, x + 10, y + 10, x + 4, y + 32 + swing * 0.5f);
+            g->DrawLine(legPen, x + 20, y + 10, x + 28, y + 32 - swing * 0.5f);
+            delete legPen;
         }
 
-        void DrawCar(Graphics^ g, float x, float y, Color c, bool left)
+        void DrawCar(Graphics^ g, float x, float y, Color c, bool movingRight)
         {
+            SolidBrush^ shadowBrush = gcnew SolidBrush(Color::FromArgb(60, 0, 0, 0));
+            g->FillEllipse(shadowBrush, x + 8, y + 44, 108.0f, 10.0f);
+            delete shadowBrush;
 
-            g->FillEllipse(gcnew SolidBrush(Color::FromArgb(60, 0, 0, 0)), x + 8, y + 44, 108.0f, 10.0f);
+            RectangleF bodyRect = RectangleF(x, y + 14, 124.0f, 38.0f);
+            GraphicsPath^ body = RR(bodyRect, 16.0f);
+            LinearGradientBrush^ bodyBrush = gcnew LinearGradientBrush
+            (
+                bodyRect,
+                ControlPaint::Light(c, 0.20f),
+                c,
+                90.0f
+            );
+            g->FillPath(bodyBrush, body);
+            delete bodyBrush;
 
-            GraphicsPath^ body = RR(RectangleF(x, y + 14, 124.0f, 38.0f), 16.0f);
-            LinearGradientBrush^ bb = gcnew LinearGradientBrush(RectangleF(x, y + 14, 124.0f, 38.0f),
-                ControlPaint::Light(c, 0.2f), c, 90.0f);
-
-            g->FillPath(bb, body);
-            delete bb;
-
-            g->DrawPath(gcnew Pen(Color::FromArgb(180, 255, 255, 255), 1.0f), body);
+            Pen^ bodyOutline = gcnew Pen(Color::FromArgb(180, 255, 255, 255), 1.0f);
+            g->DrawPath(bodyOutline, body);
+            delete bodyOutline;
             delete body;
 
             GraphicsPath^ roof = RR(RectangleF(x + 28, y, 70.0f, 28.0f), 10.0f);
-            g->FillPath(gcnew SolidBrush(Color::FromArgb(200, 16, 18, 38)), roof);
-            g->DrawPath(gcnew Pen(Color::FromArgb(100, c), 1.5f), roof); delete roof;
+            SolidBrush^ roofBrush = gcnew SolidBrush(Color::FromArgb(200, 16, 18, 38));
+            g->FillPath(roofBrush, roof);
+            delete roofBrush;
 
-            g->FillRectangle(gcnew SolidBrush(Color::FromArgb(140, 180, 220, 255)), x + 32, y + 3, 28.0f, 20.0f);
-            g->FillRectangle(gcnew SolidBrush(Color::FromArgb(140, 180, 220, 255)), x + 64, y + 3, 28.0f, 20.0f);
+            Pen^ roofOutline = gcnew Pen(Color::FromArgb(120, c), 1.5f);
+            g->DrawPath(roofOutline, roof);
+            delete roofOutline;
+            delete roof;
+
+            SolidBrush^ windowBrush = gcnew SolidBrush(Color::FromArgb(155, 180, 220, 255));
+            g->FillRectangle(windowBrush, x + 32, y + 3, 28.0f, 20.0f);
+            g->FillRectangle(windowBrush, x + 64, y + 3, 28.0f, 20.0f);
+            delete windowBrush;
 
             for (int wi = 0; wi < 2; wi++)
             {
-                float wx = x + 18 + wi * 80;
-                g->FillEllipse(gcnew SolidBrush(Color::FromArgb(255, 20, 22, 30)), wx, y + 40, 24.0f, 24.0f);
-                g->DrawEllipse(gcnew Pen(Color::FromArgb(200, c), 2.0f), wx, y + 40, 24.0f, 24.0f);
-                g->FillEllipse(gcnew SolidBrush(Color::FromArgb(200, c)), wx + 8, y + 48, 8.0f, 8.0f);
+                float wheelX = x + 18 + wi * 80;
+
+                SolidBrush^ tyreBrush = gcnew SolidBrush(Color::FromArgb(255, 20, 22, 30));
+                g->FillEllipse(tyreBrush, wheelX, y + 40, 24.0f, 24.0f);
+                delete tyreBrush;
+
+                Pen^ wheelPen = gcnew Pen(Color::FromArgb(210, c), 2.0f);
+                g->DrawEllipse(wheelPen, wheelX, y + 40, 24.0f, 24.0f);
+                delete wheelPen;
+
+                SolidBrush^ hubBrush = gcnew SolidBrush(Color::FromArgb(210, c));
+                g->FillEllipse(hubBrush, wheelX + 8, y + 48, 8.0f, 8.0f);
+                delete hubBrush;
             }
 
-            float hx = left ? x + 116 : x + 2, hr = 10.0f;
-            Color hc = left ? Color::FromArgb(255, 255, 255, 200) : Color::FromArgb(255, 255, 50, 50);
-            g->FillEllipse(gcnew SolidBrush(hc), hx, y + 24, hr, hr);
+            float headlightX = movingRight ? x + 116.0f : x - 2.0f;
+            float tailLightX = movingRight ? x + 1.0f : x + 115.0f;
 
-            g->FillEllipse(gcnew SolidBrush(Color::FromArgb(55, hc)), hx - 6, y + 18, hr + 12, hr + 12);
+            SolidBrush^ headGlow = gcnew SolidBrush(Color::FromArgb(58, 255, 255, 205));
+            g->FillEllipse(headGlow, headlightX - 6, y + 18, 22.0f, 22.0f);
+            delete headGlow;
+
+            SolidBrush^ headBrush = gcnew SolidBrush(Color::FromArgb(255, 255, 255, 205));
+            g->FillEllipse(headBrush, headlightX, y + 24, 10.0f, 10.0f);
+            delete headBrush;
+
+            SolidBrush^ tailGlow = gcnew SolidBrush(Color::FromArgb(70, 255, 45, 55));
+            g->FillEllipse(tailGlow, tailLightX - 5, y + 22, 18.0f, 18.0f);
+            delete tailGlow;
+
+            SolidBrush^ tailBrush = gcnew SolidBrush(Color::FromArgb(255, 255, 55, 62));
+            g->FillEllipse(tailBrush, tailLightX, y + 27, 8.0f, 8.0f);
+            delete tailBrush;
         }
 
     protected:
-        virtual property System::Windows::Forms::CreateParams^ CreateParams
-        {
-            System::Windows::Forms::CreateParams ^ get() override
+            virtual property System::Windows::Forms::CreateParams^ CreateParams
             {
-                System::Windows::Forms::CreateParams^ cp = Form::CreateParams;
+                System::Windows::Forms::CreateParams^ get() override
+                {
+                    System::Windows::Forms::CreateParams^ cp =
+                        Form::CreateParams;
 
-                cp->ExStyle = cp->ExStyle | 0x02000000;
+                    cp->ExStyle =
+                        cp->ExStyle | 0x02000000;
 
-                return cp;
+                    return cp;
+                }
             }
-        }
+
     };
 }
 

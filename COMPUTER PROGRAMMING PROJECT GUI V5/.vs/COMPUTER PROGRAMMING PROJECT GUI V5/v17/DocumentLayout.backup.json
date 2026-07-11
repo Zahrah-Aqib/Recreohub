@@ -1,9 +1,9 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\SABIC-Recreation\\source\\repos\\COMPUTER PROGRAMMING PROJECT GUI V5\\",
+  "WorkspaceRootPath": "C:\\Users\\SABIC-Recreation\\OneDrive\\Documents\\Recreohub\\COMPUTER PROGRAMMING PROJECT GUI V5\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{8D9BBB57-1C64-9DE4-E1E4-A0B16969AEA3}|COMPUTER PROGRAMMING PROJECT GUI V5\\COMPUTER PROGRAMMING PROJECT GUI V5.vcxproj|C:\\Users\\SABIC-Recreation\\source\\repos\\COMPUTER PROGRAMMING PROJECT GUI V5\\COMPUTER PROGRAMMING PROJECT GUI V5\\RecreoHub_GUI.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "AbsoluteMoniker": "D:0:0:{8D9BBB57-1C64-9DE4-E1E4-A0B16969AEA3}|COMPUTER PROGRAMMING PROJECT GUI V5\\COMPUTER PROGRAMMING PROJECT GUI V5.vcxproj|C:\\Users\\SABIC-Recreation\\OneDrive\\Documents\\Recreohub\\COMPUTER PROGRAMMING PROJECT GUI V5\\COMPUTER PROGRAMMING PROJECT GUI V5\\RecreoHub_GUI.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{8D9BBB57-1C64-9DE4-E1E4-A0B16969AEA3}|COMPUTER PROGRAMMING PROJECT GUI V5\\COMPUTER PROGRAMMING PROJECT GUI V5.vcxproj|solutionrelative:COMPUTER PROGRAMMING PROJECT GUI V5\\RecreoHub_GUI.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     }
   ],
@@ -36,11 +36,11 @@
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "RecreoHub_GUI.cpp",
-              "DocumentMoniker": "C:\\Users\\SABIC-Recreation\\source\\repos\\COMPUTER PROGRAMMING PROJECT GUI V5\\COMPUTER PROGRAMMING PROJECT GUI V5\\RecreoHub_GUI.cpp",
+              "DocumentMoniker": "C:\\Users\\SABIC-Recreation\\OneDrive\\Documents\\Recreohub\\COMPUTER PROGRAMMING PROJECT GUI V5\\COMPUTER PROGRAMMING PROJECT GUI V5\\RecreoHub_GUI.cpp",
               "RelativeDocumentMoniker": "COMPUTER PROGRAMMING PROJECT GUI V5\\RecreoHub_GUI.cpp",
-              "ToolTip": "C:\\Users\\SABIC-Recreation\\source\\repos\\COMPUTER PROGRAMMING PROJECT GUI V5\\COMPUTER PROGRAMMING PROJECT GUI V5\\RecreoHub_GUI.cpp",
+              "ToolTip": "C:\\Users\\SABIC-Recreation\\OneDrive\\Documents\\Recreohub\\COMPUTER PROGRAMMING PROJECT GUI V5\\COMPUTER PROGRAMMING PROJECT GUI V5\\RecreoHub_GUI.cpp",
               "RelativeToolTip": "COMPUTER PROGRAMMING PROJECT GUI V5\\RecreoHub_GUI.cpp",
-              "ViewState": "AgIAAAgMAAAAAAAAAAAowA0MAAAmAAAAAAAAAA==",
+              "ViewState": "AgIAADcNAAAAAAAAAAAswFYNAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2026-07-01T18:19:32.837Z",
               "EditorCaption": ""

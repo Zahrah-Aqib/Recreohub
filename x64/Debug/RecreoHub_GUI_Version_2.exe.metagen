@@ -1,0 +1,53 @@
+ImageRuntimeVersion: v4.0.30319
+Assembly RecreoHub_GUI_Version_2, Version=0.0.*, Culture=Invariant Language (Invariant Country): 
+	hash=SHA1, flags=PublicKey
+Assembly mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a: 
+	hash=None, flags=None
+Assembly System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Class RecreoHub3D.MovieItem: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(System.String, System.String, Int32, System.String): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    System.String Name : Public
+    System.String Duration : Public
+    Int32 Year : Public
+    System.String Genre : Public
+  Methods:
+    ToString(): PrivateScope, Public, Virtual, HideBySig
+Class RecreoHub3D.ProductItem: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(System.String, Int32, System.String): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    System.String Name : Public
+    Int32 Price : Public
+    System.String Category : Public
+  Methods:
+    ToString(): PrivateScope, Public, Virtual, HideBySig
+Class RecreoHub3D.SmoothPanel: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :System.Windows.Forms.Panel
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+Class RecreoHub3D.LuxCard: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :System.Windows.Forms.Panel
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    System.Drawing.Color CardAccent : Public
+    Boolean Hovering : Public
+Class RecreoHub3D.GlowButton: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :System.Windows.Forms.Button
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    System.Drawing.Color ColorA : Public
+    System.Drawing.Color ColorB : Public
+    Boolean Hovering : Public
+    Boolean Ghost : Public
+Class RecreoHub3D.GlassBox: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :System.Windows.Forms.Panel
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    System.Drawing.Color Accent : Public
+Class RecreoHub3D.RecreoHubForm: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :System.Windows.Forms.Form
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
